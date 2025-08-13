@@ -11,6 +11,7 @@ import { localGeorgiaItalic } from "../fonts";
 import { User, Mail, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "./ui/toast";
+import { apiUrl } from "../../lib/api";
 // import VerifyEmailDialog from "./VerifyEmailDialog"; // Disabled: no email verification flow
 
 interface RegisterDialogProps {
@@ -90,10 +91,10 @@ const RegisterDialog: React.FC<RegisterDialogProps> = ({ triggerText, className,
     setError("");
 
     try {
-      console.log("Sending registration request to:", 'http://localhost:8080/api/auth/register');
+      console.log("Sending registration request to:", apiUrl('/api/auth/register'));
       console.log("Request data:", { username: formData.username, email: formData.email, password: '[HIDDEN]' });
       
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch(apiUrl('/api/auth/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

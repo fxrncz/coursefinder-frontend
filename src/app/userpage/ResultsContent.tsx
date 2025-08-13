@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
+import { apiUrl } from "../../lib/api";
 import Image from "next/image";
 import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
@@ -59,7 +60,7 @@ const ResultsContent: React.FC = () => {
       console.log('User ID:', user.id);
 
       // Check if user has taken the personality test
-      const checkResponse = await fetch(`http://localhost:8080/api/personality-test/check/user/${user.id}`);
+      const checkResponse = await fetch(apiUrl(`/api/personality-test/check/user/${user.id}`));
       const checkData = await checkResponse.json();
       console.log('=== CHECK API RESPONSE ===');
       console.log('Check response:', checkData);
@@ -70,7 +71,7 @@ const ResultsContent: React.FC = () => {
         console.log('User has taken the test, fetching ALL results...');
 
         // Get ALL test results for the user (not just the latest)
-        const resultResponse = await fetch(`http://localhost:8080/api/personality-test/results/user/${user.id}`);
+        const resultResponse = await fetch(apiUrl(`/api/personality-test/results/user/${user.id}`));
         const resultData = await resultResponse.json();
         console.log('=== ALL RESULTS API RESPONSE ===');
         console.log('Result response:', resultData);

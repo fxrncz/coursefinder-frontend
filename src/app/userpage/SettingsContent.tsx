@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { apiUrl } from "../../lib/api";
 import ResultsContent from "./ResultsContent";
 import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
@@ -144,7 +145,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ userData, onUserDataU
     setMessage(null);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/update-profile', {
+      const response = await fetch(apiUrl('/api/auth/update-profile'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +199,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ userData, onUserDataU
     setMessage(null);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/delete-account', {
+      const response = await fetch(apiUrl('/api/auth/delete-account'), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -258,10 +259,10 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ userData, onUserDataU
     setIsResetSending(true);
     setMessage(null);
     try {
-      const resp = await fetch('http://localhost:8080/api/verify/send-code', {
+      const resp = await fetch(apiUrl('/api/verify/send-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userData.email, purpose: 'reset', resetBaseUrl: 'http://localhost:3000/reset-password' })
+        body: JSON.stringify({ email: userData.email, purpose: 'reset', resetBaseUrl: `${window.location.origin}/reset-password` })
       });
       if (!resp.ok) {
         throw new Error('Request failed');

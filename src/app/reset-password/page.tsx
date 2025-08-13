@@ -4,6 +4,7 @@ import React, { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
+import { apiUrl } from "../../lib/api";
 
 export default function ResetPasswordPage() {
   return (
@@ -47,7 +48,7 @@ function ResetPasswordContent() {
     setLoading(true);
     try {
       // First confirm token (purpose=reset)
-      const verify = await fetch('http://localhost:8080/api/verify/confirm', {
+      const verify = await fetch(apiUrl('/api/verify/confirm'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: token, purpose: 'reset' })
@@ -58,7 +59,7 @@ function ResetPasswordContent() {
         return;
       }
       // Then set new password
-      const resp = await fetch('http://localhost:8080/api/password/reset', {
+      const resp = await fetch(apiUrl('/api/password/reset'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword: password })

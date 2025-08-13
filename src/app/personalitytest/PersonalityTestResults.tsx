@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../../lib/api';
 import { localGeorama, localGeorgia } from '../fonts';
 
 interface PersonalityTestResultsProps {
@@ -55,10 +56,10 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
 
       if (isGuest && sessionId) {
         // Fetch results by session ID for guest users
-        response = await fetch(`http://localhost:8080/api/personality-test/result/session/${sessionId}`);
+        response = await fetch(apiUrl(`/api/personality-test/result/session/${sessionId}`));
       } else if (userId) {
         // Fetch results by user ID for authenticated users
-        response = await fetch(`http://localhost:8080/api/personality-test/result/user/${userId}`);
+        response = await fetch(apiUrl(`/api/personality-test/result/user/${userId}`));
       } else {
         throw new Error('No user ID or session ID provided');
       }

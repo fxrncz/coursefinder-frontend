@@ -7,6 +7,7 @@ import { Input } from "./ui/input";
 import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
 import { useToast } from "./ui/toast";
+import { apiUrl } from "../../lib/api";
 
 interface VerifyEmailDialogProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({ isOpen, onOpenCha
     setSubmitting(true);
     setError("");
     try {
-      const resp = await fetch('http://localhost:8080/api/verify/confirm', {
+      const resp = await fetch(apiUrl('/api/verify/confirm'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
@@ -86,7 +87,7 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({ isOpen, onOpenCha
     if (remainingMs > 0) return;
     setResending(true);
     try {
-      const resp = await fetch('http://localhost:8080/api/verify/send-code', {
+      const resp = await fetch(apiUrl('/api/verify/send-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

@@ -11,6 +11,7 @@ import { localGeorgiaItalic } from "../fonts";
 import { Mail, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "./ui/toast";
+import { apiUrl } from "../../lib/api";
 import ForgotPasswordDialog from "./ForgotPasswordDialog";
 
 interface AuthDialogProps {
@@ -86,10 +87,10 @@ const AuthDialog: React.FC<AuthDialogProps> = ({
     setError("");
 
     try {
-      console.log("Sending login request to:", 'http://localhost:8080/api/auth/login');
+      console.log("Sending login request to:", apiUrl('/api/auth/login'));
       console.log("Request data:", { email: formData.email, password: '[HIDDEN]' });
       
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch(apiUrl('/api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

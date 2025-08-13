@@ -11,6 +11,7 @@ import GuestResultsDialog from "../components/GuestResultsDialog";
 import { Button } from "../components/ui/button";
 import { useRouter } from "next/navigation";
 import { useToast } from "../components/ui/toast";
+import { apiUrl } from "../../lib/api";
 
 const PersonalityTestHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -151,7 +152,7 @@ const PersonalityTestHeader = () => {
 
     if (lastSessionId && !storedUserData) {
       // Verify this is actually a guest session by checking if it's not linked to a user
-      fetch(`http://localhost:8080/api/personality-test/result/session/${lastSessionId}`)
+      fetch(apiUrl(`/api/personality-test/result/session/${lastSessionId}`))
         .then(response => response.json())
         .then(data => {
           if (data.status === 'SUCCESS' && data.result && !data.result.userId) {

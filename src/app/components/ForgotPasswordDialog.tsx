@@ -9,6 +9,7 @@ import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
 import { Mail } from "lucide-react";
 import { useToast } from "./ui/toast";
+import { apiUrl } from "../../lib/api";
 
 interface ForgotPasswordDialogProps {
   isOpen: boolean;
@@ -41,10 +42,10 @@ const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({ isOpen, onO
 
     try {
       // Request a password reset code (does not leak existence)
-      await fetch('http://localhost:8080/api/verify/send-code', {
+      await fetch(apiUrl('/api/verify/send-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, purpose: 'reset', resetBaseUrl: 'http://localhost:3000/reset-password' })
+        body: JSON.stringify({ email, purpose: 'reset', resetBaseUrl: `${window.location.origin}/reset-password` })
       });
       onOpenChange(false);
       showToast({

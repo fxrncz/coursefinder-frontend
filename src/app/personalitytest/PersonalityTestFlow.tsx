@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import QuestionnaireCard from './QuestionnaireCard';
 import GoalSettingQuestions from './GoalSettingQuestions';
 import { localGeorama } from '../fonts';
+import { apiUrl } from '../../lib/api';
 
 type TestPhase = 'personality' | 'goals' | 'submitting' | 'complete';
 
@@ -237,7 +238,7 @@ const PersonalityTestFlow: React.FC = () => {
           answers: mergedAnswers as any,
           goalSettings: goals
         };
-        endpoint = `http://localhost:8080/api/personality-test/submit/guest?guestToken=${guestToken}`;
+        endpoint = apiUrl(`/api/personality-test/submit/guest?guestToken=${guestToken}`);
         console.log('Submit Test - Guest submission to:', endpoint);
       } else {
         // User submission
@@ -249,7 +250,7 @@ const PersonalityTestFlow: React.FC = () => {
           answers: mergedAnswers as any,
           goalSettings: goals
         };
-        endpoint = 'http://localhost:8080/api/personality-test/submit/user';
+        endpoint = apiUrl('/api/personality-test/submit/user');
         console.log('Submit Test - User submission to:', endpoint);
       }
 

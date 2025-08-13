@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { apiUrl } from "../../lib/api";
 import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
 import {
@@ -49,7 +50,7 @@ const GuestResultsDialog: React.FC<GuestResultsDialogProps> = ({
     const lastSessionId = localStorage.getItem('lastTestSessionId');
     if (lastSessionId) {
       try {
-        const response = await fetch(`http://localhost:8080/api/personality-test/result/session/${lastSessionId}`);
+        const response = await fetch(apiUrl(`/api/personality-test/result/session/${lastSessionId}`));
         const data = await response.json();
 
         // Valid guest session should have no userId associated
