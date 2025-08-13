@@ -1,11 +1,19 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FFF4E6] p-4">Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
   const params = useSearchParams();
   const router = useRouter();
   const email = useMemo(() => params.get("email") || "", [params]);

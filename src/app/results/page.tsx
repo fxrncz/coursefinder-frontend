@@ -1,12 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PersonalityTestResults from '../personalitytest/PersonalityTestResults';
 import PersonalityTestHeader from '../personalitytest/PersonalityTestHeader';
 import { localGeorama } from '../fonts';
 
 export default function ResultsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FFF4E6] flex items-center justify-center"><p className={`${localGeorama.className} text-[#002A3C] text-lg`}>Loading...</p></div>}>
+      <ResultsContent />
+    </Suspense>
+  );
+}
+
+function ResultsContent() {
   const [userData, setUserData] = useState<any>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
