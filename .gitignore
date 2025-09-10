@@ -46,3 +46,4 @@ out
 dist
 
 ".env" 
+".env*" 
