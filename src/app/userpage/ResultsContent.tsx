@@ -113,9 +113,14 @@ const ResultsContent: React.FC = () => {
     }
   };
 
-  const handleViewResults = () => {
-    // The user data is already in localStorage, just navigate to results
-    router.push('/results');
+  const handleViewResults = (result?: TestResult) => {
+    if (result && result.sessionId) {
+      // Navigate to results page with specific session ID
+      router.push(`/results?session=${result.sessionId}`);
+    } else {
+      // Fallback to latest result
+      router.push('/results');
+    }
   };
 
   const handleRetakeTest = () => {
@@ -202,7 +207,7 @@ const ResultsContent: React.FC = () => {
                       {/* Right Side - Buttons */}
                       <div className="flex gap-3">
                         <button
-                          onClick={handleViewResults}
+                          onClick={() => handleViewResults(result)}
                           className={`${localGeorama.className} px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 bg-[#002A3C] text-white font-bold text-xs sm:text-sm hover:bg-[#004E70] transition-colors`}
                         >
                           VIEW RESULTS

@@ -62,22 +62,51 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({ isOpen, onOpenCha
     if (!validate()) return;
     setSubmitting(true);
     setError("");
+    
+    // Show immediate feedback
+    showToast({ 
+      title: "Verifying...", 
+      description: "Please wait while we verify your code.", 
+      variant: "info", 
+      durationMs: 2000 
+    });
+    
     try {
+      const startTime = Date.now();
       const resp = await fetch(apiUrl('/api/verify/confirm'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
       });
       const data = await resp.json();
+      const endTime = Date.now();
+      
       if (data.success) {
-        showToast({ title: "Email verified", description: "Your email has been verified successfully.", variant: "success", durationMs: 3500 });
+        showToast({ 
+          title: "🎉 Email verified!", 
+          description: "Your account is now ready to use. Welcome to CourseFinder!", 
+          variant: "success", 
+          durationMs: 4000 
+        });
         onOpenChange(false);
         if (onVerified) onVerified(data.user);
       } else {
         setError(data.message || 'Invalid code');
+        showToast({ 
+          title: "Verification failed", 
+          description: data.message || 'Please check your code and try again.', 
+          variant: "error", 
+          durationMs: 3000 
+        });
       }
     } catch (err) {
       setError('Network error. Please try again.');
+      showToast({ 
+        title: "Network error", 
+        description: 'Please check your connection and try again.', 
+        variant: "error", 
+        durationMs: 3000 
+      });
     } finally {
       setSubmitting(false);
     }
@@ -86,6 +115,15 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({ isOpen, onOpenCha
   const handleResend = async () => {
     if (remainingMs > 0) return;
     setResending(true);
+    setError("");
+    
+    showToast({ 
+      title: "Sending new code...", 
+      description: "Please wait while we send a new verification code.", 
+      variant: "info", 
+      durationMs: 2000 
+    });
+    
     try {
       const resp = await fetch(apiUrl('/api/verify/send-code'), {
         method: 'POST',
@@ -94,13 +132,28 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({ isOpen, onOpenCha
       });
       const data = await resp.json();
       if (data.success) {
-        showToast({ title: "Code sent", description: `We sent a new code to ${email}.`, variant: "info", durationMs: 3000 });
+        showToast({ 
+          title: "✅ New code sent!", 
+          description: `We sent a new verification code to ${email}.`, 
+          variant: "success", 
+          durationMs: 4000 
+        });
         setCooldownUntil(Date.now() + RESEND_COOLDOWN_MS);
       } else {
-        showToast({ title: "Unable to send", description: data.message || 'Please try again later.', variant: "error", durationMs: 3500 });
+        showToast({ 
+          title: "Unable to send", 
+          description: data.message || 'Please try again later.', 
+          variant: "error", 
+          durationMs: 3500 
+        });
       }
     } catch {
-      showToast({ title: "Network error", description: 'Please try again.', variant: "error", durationMs: 3500 });
+      showToast({ 
+        title: "Network error", 
+        description: 'Please check your connection and try again.', 
+        variant: "error", 
+        durationMs: 3500 
+      });
     } finally {
       setResending(false);
     }

@@ -8,10 +8,15 @@ import { localGotham } from "../fonts";
 import AuthDialog from "./AuthDialog";
 import RegisterDialog from "./RegisterDialog";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useToast } from "./ui/toast";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 
-const Header = () => {
+interface HeaderProps {
+  forceWhite?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
@@ -20,6 +25,63 @@ const Header = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
+  const pathname = usePathname();
+
+  const isActive = useCallback((href: string) => {
+    if (!pathname) return false;
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  }, [pathname]);
+
+  // Navigation warning
+  const isOnTestPage = useMemo(() => pathname?.startsWith('/personalitytest') ?? false, [pathname]);
+  const hasTestProgress = useCallback(() => {
+    try {
+      const savedAnswers = localStorage.getItem('personalityTestAnswers');
+      if (savedAnswers) {
+        const parsed = JSON.parse(savedAnswers);
+        if (parsed && Object.keys(parsed).length > 0) return true;
+      }
+      const savedGoal = localStorage.getItem('goalSettingAnswers');
+      if (savedGoal) {
+        const goal = JSON.parse(savedGoal);
+        if (
+          goal?.priority ||
+          (Array.isArray(goal?.learningStyle) && goal.learningStyle.length > 0) ||
+          goal?.environment || goal?.motivation || goal?.concern ||
+          (typeof goal?.confidence === 'number' && goal.confidence > 0) ||
+          goal?.routine || goal?.impact
+        ) return true;
+      }
+    } catch {}
+    return false;
+  }, []);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const handleNavAttempt = useCallback((e: React.MouseEvent, href: string) => {
+    if (isOnTestPage && !href.startsWith('/personalitytest') && hasTestProgress()) {
+      e.preventDefault();
+      setPendingHref(href);
+      setShowLeaveDialog(true);
+    }
+  }, [isOnTestPage, hasTestProgress]);
+  const navHandler = useCallback((href: string) => (e: React.MouseEvent) => handleNavAttempt(e, href), [handleNavAttempt]);
+  const confirmLeaveTest = useCallback(() => {
+    try {
+      localStorage.removeItem('personalityTestAnswers');
+      localStorage.removeItem('personalityTestCurrentSet');
+      localStorage.removeItem('personalityTestCurrentQuestion');
+      localStorage.removeItem('goalSettingAnswers');
+    } catch {}
+    const target = pendingHref || '/';
+    setShowLeaveDialog(false);
+    setPendingHref(null);
+    router.push(target);
+  }, [pendingHref, router]);
+  const cancelLeaveTest = useCallback(() => {
+    setShowLeaveDialog(false);
+    setPendingHref(null);
+  }, []);
 
   // Optimized scroll handler with throttling
   const handleScroll = useCallback(() => {
@@ -90,13 +152,13 @@ const Header = () => {
         <div className="w-full">
           <div className="max-w-6xl mx-auto px-8">
             {/* Your Account/Logout - Original Desktop Design */}
-            <div className={`max-w-xs ml-auto bg-[#A75F00] flex justify-center px-0 sm:px-2 py-3 hidden sm:flex ${localGeorama.className}`}>
-              <div className="flex items-center gap-4 text-white">
+            <div className={`max-w-xs ml-auto ${forceWhite ? 'bg-white' : 'bg-[#A75F00]'} flex justify-center px-0 sm:px-2 py-3 hidden sm:flex ${localGeorama.className}`}>
+              <div className={`flex items-center gap-4 ${forceWhite ? 'text-[#4d2c00]' : 'text-white'}`}>
                 <Link 
                   href="/userpage" 
-                  className="text-sm hover:text-yellow-300 transition-colors duration-200 cursor-pointer font-semibold"
+                  className={`text-sm transition-colors duration-200 cursor-pointer font-semibold ${forceWhite ? 'text-[#A75F00] hover:text-[#4d2c00]' : 'hover:text-yellow-300'}`}
                 >
-                  Welcome, {userData?.username || 'User'}
+                  Your account
                 </Link>
                 <Button 
                   onClick={() => {
@@ -111,7 +173,7 @@ const Header = () => {
                     });
                   }}
                   variant="ghost" 
-                  className="text-white hover:text-yellow-300 hover:bg-transparent"
+                  className={`${forceWhite ? 'text-[#A75F00] hover:text-[#4d2c00]' : 'text-white hover:text-yellow-300'} hover:bg-transparent`}
                 >
                   LOGOUT
                 </Button>
@@ -153,7 +215,7 @@ const Header = () => {
                 
                 {/* Logo and Title - Center */}
                 <div className="flex items-center gap-1 flex-1 justify-center">
-                  <Link href="/" className="flex items-center gap-1">
+                  <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className="flex items-center gap-1">
                     <Image src="/togahat.png" alt="CourseFinder Logo" width={32} height={32} />
                     <span className={`${localGotham.className} text-[#A75F00] font-semibold text-base tracking-wide`}>COURSEFINDER</span>
                   </Link>
@@ -174,27 +236,27 @@ const Header = () => {
               <div className="hidden sm:flex items-center justify-center w-full">
                 <div className="flex items-center justify-center gap-8 sm:gap-12 md:gap-16 lg:gap-20 xl:gap-24">
                   <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-                    <Link href="/" className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                    <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className="flex items-center gap-2 sm:gap-3 md:gap-4">
                       <Image src="/togahat.png" alt="CourseFinder Logo" width={50} height={50} className="sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-[70px] lg:h-[70px]" />
                       <span className={`${localGotham.className} text-[#A75F00] font-semibold text-lg sm:text-xl md:text-2xl tracking-wide`}>COURSEFINDER</span>
                     </Link>
                   </div>
                   <nav className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 text-sm sm:text-base">
-                    <Link href="/" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline relative group`}>
+                    <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline relative group`}>
                       <span>HOME</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                     </Link>
-                    <Link href="/about" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline relative group whitespace-nowrap`}>
+                    <Link href="/about" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/about'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/about') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline relative group whitespace-nowrap`}>
                       <span>ABOUT US</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/about') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                     </Link>
-                    <Link href="/resources" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline relative group`}>
+                    <Link href="/resources" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/resources'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/resources') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline relative group`}>
                       <span>RESOURCES</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/resources') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                     </Link>
-                    <Link href="/personalitytest" className={`${localGeorama.className} flex items-center font-normal text-[#4d2c00] no-underline gap-1 relative group whitespace-nowrap`}>
+                    <Link href="/personalitytest" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/personalitytest'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} flex items-center ${isActive('/personalitytest') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline gap-1 relative group whitespace-nowrap`}>
                       <span>PERSONALITY TEST</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/personalitytest') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                       <span className="text-lg ml-1">→</span>
                     </Link>
                   </nav>
@@ -204,16 +266,16 @@ const Header = () => {
               {/* Mobile Navigation Menu - Fixed positioning when scrolled */}
               <div className={`sm:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 transition-all duration-300 ${isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'} ${isScrolled ? 'shadow-lg' : ''}`}>
                 <nav className="flex flex-col py-4 px-8 space-y-4">
-                  <Link href="/" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     HOME
                   </Link>
-                  <Link href="/about" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/about" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/about'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/about') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     ABOUT US
                   </Link>
-                  <Link href="/resources" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/resources" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/resources'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/resources') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     RESOURCES
                   </Link>
-                  <Link href="/personalitytest" className={`${localGeorama.className} flex items-center font-normal text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/personalitytest" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/personalitytest'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} flex items-center ${isActive('/personalitytest') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     PERSONALITY TEST
                     <span className="text-lg ml-1">→</span>
                   </Link>
@@ -228,16 +290,16 @@ const Header = () => {
         <div className="w-full">
           <div className="max-w-6xl mx-auto px-8">
             {/* Login/Create Account - Original Desktop Design */}
-            <div className={`max-w-xs ml-auto bg-[#A75F00] flex justify-center px-0 sm:px-2 py-3 hidden sm:flex ${localGeorama.className}`}>
+            <div className={`max-w-xs ml-auto ${forceWhite ? 'bg-white' : 'bg-[#A75F00]'} flex justify-center px-0 sm:px-2 py-3 hidden sm:flex ${localGeorama.className}`}>
               <button 
                 onClick={() => setAuthDialogOpen(true)}
-                className="text-white hover:text-yellow-300 mr-6 bg-transparent border-none cursor-pointer"
+                className={`${forceWhite ? 'text-[#A75F00] hover:text-[#4d2c00]' : 'text-white hover:text-yellow-300'} mr-6 bg-transparent border-none cursor-pointer`}
               >
                 LOGIN
               </button>
               <button 
                 onClick={() => setRegisterDialogOpen(true)}
-                className="text-white hover:text-yellow-300 bg-transparent border-none cursor-pointer"
+                className={`${forceWhite ? 'text-[#A75F00] hover:text-[#4d2c00]' : 'text-white hover:text-yellow-300'} bg-transparent border-none cursor-pointer`}
               >
                 CREATE NEW ACCOUNT
               </button>
@@ -288,21 +350,21 @@ const Header = () => {
                     <span className={`${localGotham.className} text-[#A75F00] font-semibold text-lg sm:text-xl md:text-2xl tracking-wide`}>COURSEFINDER</span>
                   </div>
                   <nav className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 text-sm sm:text-base">
-                    <Link href="/" className={`${localGeorama.className} font-bold text-[#4d2c00] no-underline relative group`}>
+                    <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline relative group`}>
                       <span>HOME</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                     </Link>
-                    <Link href="/about" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline relative group whitespace-nowrap`}>
+                    <Link href="/about" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/about'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/about') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline relative group whitespace-nowrap`}>
                       <span>ABOUT US</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/about') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                     </Link>
-                    <Link href="/resources" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline relative group`}>
+                    <Link href="/resources" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/resources'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/resources') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline relative group`}>
                       <span>RESOURCES</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/resources') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                     </Link>
-                    <Link href="/personalitytest" className={`${localGeorama.className} flex items-center font-normal text-[#4d2c00] no-underline gap-1 relative group whitespace-nowrap`}>
+                    <Link href="/personalitytest" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/personalitytest'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} flex items-center ${isActive('/personalitytest') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline gap-1 relative group whitespace-nowrap`}>
                       <span>PERSONALITY TEST</span>
-                      <span className="absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      <span className={`absolute left-0 -bottom-1 w-1/2 h-0.5 bg-[#4d2c00] ${isActive('/personalitytest') ? 'scale-x-100' : 'scale-x-0'} group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
                       <span className="text-lg ml-1">→</span>
                     </Link>
                   </nav>
@@ -312,16 +374,16 @@ const Header = () => {
               {/* Mobile Navigation Menu - Fixed positioning when scrolled */}
               <div className={`sm:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 transition-all duration-300 ${isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'} ${isScrolled ? 'shadow-lg' : ''}`}>
                 <nav className="flex flex-col py-4 px-8 space-y-4">
-                  <Link href="/" className={`${localGeorama.className} font-bold text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     HOME
                   </Link>
-                  <Link href="/about" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/about" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/about'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/about') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     ABOUT US
                   </Link>
-                  <Link href="/resources" className={`${localGeorama.className} font-normal text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/resources" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/resources'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/resources') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     RESOURCES
                   </Link>
-                  <Link href="/personalitytest" className={`${localGeorama.className} flex items-center font-normal text-[#4d2c00] no-underline py-2`}>
+                  <Link href="/personalitytest" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/personalitytest'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} flex items-center ${isActive('/personalitytest') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     PERSONALITY TEST
                     <span className="text-lg ml-1">→</span>
                   </Link>
@@ -345,6 +407,20 @@ const Header = () => {
   return (
     <>
       {headerContent}
+      {showLeaveDialog && (
+        <Dialog open={showLeaveDialog}>
+          <DialogContent className="bg-white border-[#E7DFD6] p-6 sm:p-8 max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-[#002A3C]">Leave Personality Test?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-[#294556]">You have in-progress answers. Leaving will clear your current test progress.</p>
+            <DialogFooter>
+              <button onClick={cancelLeaveTest} className={`${localGeorama.className} border border-[#002A3C] text-[#002A3C] px-4 py-2 rounded font-semibold hover:bg-gray-50 transition-colors`}>Stay on Test</button>
+              <button onClick={confirmLeaveTest} className={`${localGeorama.className} bg-red-600 text-white px-4 py-2 rounded font-semibold hover:bg-red-700 transition-colors`}>Leave Test</button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Auth Dialog */}
       <AuthDialog 

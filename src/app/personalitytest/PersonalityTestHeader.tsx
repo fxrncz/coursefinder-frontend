@@ -210,7 +210,7 @@ const PersonalityTestHeader = () => {
                   href="/userpage" 
                   className="text-sm hover:text-yellow-300 transition-colors duration-200 cursor-pointer font-semibold"
                 >
-                  Welcome, {userData?.username || 'User'}
+                  Your account
                 </Link>
                 <Button 
                   onClick={handleLogout}
@@ -316,7 +316,7 @@ const PersonalityTestHeader = () => {
                           >
                             View Results
                           </button>
-                          <Link href="/personalitytest/about" className={`${localGeorama.className} block px-4 py-2 text-[#4d2c00] hover:bg-gray-50 transition-colors duration-200`}>
+                          <Link href="/resources" className={`${localGeorama.className} block px-4 py-2 text-[#4d2c00] hover:bg-gray-50 transition-colors duration-200`}>
                             About the Test
                           </Link>
                         </div>
@@ -366,7 +366,7 @@ const PersonalityTestHeader = () => {
                       >
                         View Results
                       </button>
-                      <Link href="/personalitytest/about" className={`${localGeorama.className} block px-4 py-3 text-[#4d2c00] hover:bg-white rounded-md mx-2 transition-colors duration-200`}>
+                      <Link href="/resources" className={`${localGeorama.className} block px-4 py-3 text-[#4d2c00] hover:bg-white rounded-md mx-2 transition-colors duration-200`}>
                         About the Test
                       </Link>
                     </div>

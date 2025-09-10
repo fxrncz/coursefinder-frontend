@@ -40,23 +40,50 @@ const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({ isOpen, onO
     setIsLoading(true);
     setError("");
 
+    // Show immediate feedback
+    showToast({
+      title: "Sending reset link...",
+      description: "Please wait while we process your request.",
+      variant: "info",
+      durationMs: 2000,
+    });
+
     try {
-      // Request a password reset code (does not leak existence)
-      await fetch(apiUrl('/api/verify/send-code'), {
+      // Request a password reset link
+      const response = await fetch(apiUrl('/api/verify/send-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, purpose: 'reset', resetBaseUrl: `${window.location.origin}/reset-password` })
       });
-      onOpenChange(false);
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        onOpenChange(false);
+        showToast({
+          title: "✅ Reset link sent!",
+          description: "If an account exists for this address, we sent a password reset link to your email.",
+          variant: "success",
+          durationMs: 5000,
+        });
+        setEmail("");
+      } else {
+        setError(data.message || "Something went wrong. Please try again later.");
+        showToast({
+          title: "Request failed",
+          description: data.message || "Please try again later.",
+          variant: "error",
+          durationMs: 4000,
+        });
+      }
+    } catch (err) {
+      setError("Network error. Please check your connection and try again.");
       showToast({
-        title: "Check your email",
-        description: "If an account exists for this address, we sent a password reset link.",
-        variant: "info",
+        title: "Network error",
+        description: "Please check your connection and try again.",
+        variant: "error",
         durationMs: 4000,
       });
-      setEmail("");
-    } catch (err) {
-      setError("Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
     }

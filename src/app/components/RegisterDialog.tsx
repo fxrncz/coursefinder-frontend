@@ -12,7 +12,7 @@ import { User, Mail, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "./ui/toast";
 import { apiUrl } from "../../lib/api";
-// import VerifyEmailDialog from "./VerifyEmailDialog"; // Disabled: no email verification flow
+import VerifyEmailDialog from "./VerifyEmailDialog";
 
 interface RegisterDialogProps {
   triggerText: string;
@@ -36,8 +36,8 @@ const RegisterDialog: React.FC<RegisterDialogProps> = ({ triggerText, className,
   
   const router = useRouter();
   const { showToast } = useToast();
-  // const [verifyOpen, setVerifyOpen] = useState(false);
-  // const [registeredEmail, setRegisteredEmail] = useState("");
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -113,14 +113,24 @@ const RegisterDialog: React.FC<RegisterDialogProps> = ({ triggerText, className,
       console.log("Response data:", data);
 
       if (data.success) {
-        // Direct registration success: store user and route to user page
-        if (data.user) {
+        // Registration successful, now show verification modal
+        if (data.requiresVerification) {
+          setRegisteredEmail(formData.email);
+          setVerifyOpen(true);
+          showToast({ 
+            title: 'Registration successful!', 
+            description: 'Please check your email for verification code.', 
+            variant: 'success', 
+            durationMs: 5000 
+          });
+        } else if (data.user) {
+          // Direct registration success (fallback)
           localStorage.setItem('userData', JSON.stringify(data.user));
+          showToast({ title: 'Registration complete', description: 'Welcome to CourseFinder!', variant: 'success', durationMs: 3000 });
+          setIsOpen(false);
+          setFormData({ username: "", email: "", password: "", confirmPassword: "" });
+          router.push('/userpage');
         }
-        showToast({ title: 'Registration complete', description: 'Welcome to CourseFinder!', variant: 'success', durationMs: 3000 });
-        setIsOpen(false);
-        setFormData({ username: "", email: "", password: "", confirmPassword: "" });
-        router.push('/userpage');
       } else {
         setError(data.message || "Registration failed");
       }
@@ -265,7 +275,27 @@ const RegisterDialog: React.FC<RegisterDialogProps> = ({ triggerText, className,
           </div>
         </div>
       </DialogContent>
-      {/* VerifyEmailDialog removed for now */}
+      
+      {/* Email Verification Modal */}
+      <VerifyEmailDialog
+        isOpen={verifyOpen}
+        onOpenChange={setVerifyOpen}
+        email={registeredEmail}
+        onVerified={(user) => {
+          if (user) {
+            localStorage.setItem('userData', JSON.stringify(user));
+            showToast({ 
+              title: 'Email verified!', 
+              description: 'Welcome to CourseFinder!', 
+              variant: 'success', 
+              durationMs: 3000 
+            });
+            setIsOpen(false);
+            setFormData({ username: "", email: "", password: "", confirmPassword: "" });
+            router.push('/userpage');
+          }
+        }}
+      />
     </Dialog>
   );
 };

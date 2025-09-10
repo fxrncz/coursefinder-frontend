@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CourseFinder - Find Your Perfect Course",
   description: "Discover personalized course recommendations based on your personality and interests",
+  icons: {
+    icon: "/togahat.png",
+    shortcut: "/togahat.png",
+    apple: "/togahat.png",
+  },
 };
 
 export default function RootLayout({

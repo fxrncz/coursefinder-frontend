@@ -164,6 +164,29 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
     answersRef.current = newAnswers;
   };
 
+  // Modern vertical choice card component
+  const ChoiceCard: React.FC<{ label: string; selected: boolean; onClick: () => void; disabled?: boolean }> = ({ label, selected, onClick, disabled }) => {
+    return (
+      <button
+        type="button"
+        disabled={!!disabled}
+        onClick={onClick}
+        className={`w-full text-left rounded-lg border p-4 transition-all duration-200 ${selected ? 'border-[#002A3C] bg-[#FFFAF4] shadow-md' : 'border-[#E7DFD6] bg-white hover:border-[#A75F00] hover:shadow-sm hover:-translate-y-0.5'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <span className={`${localGeorgia.className} text-[#002A3C]`}>{label}</span>
+          {selected && (
+            <span className="shrink-0 inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#002A3C]">
+              <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </span>
+          )}
+        </div>
+      </button>
+    );
+  };
+
   const handleNavigationWarningConfirm = () => {
     // Clear goal setting progress from localStorage
     localStorage.removeItem('goalSettingAnswers');
@@ -202,7 +225,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 1. What is your main priority in choosing a course?
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   'High-paying job after graduation',
                   'Doing something I love',
@@ -210,17 +233,12 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                   'Opportunity to help people',
                   'Exploring different interests'
                 ].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="priority"
-                      value={option}
-                      checked={answers.priority === option}
-                      onChange={() => handleSingleChoice('priority', option)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`${localGeorgia.className} text-[#002A3C]`}>{option}</span>
-                  </label>
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.priority === option}
+                    onClick={() => handleSingleChoice('priority', option)}
+                  />
                 ))}
               </div>
             </div>
@@ -230,7 +248,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 2. How do you prefer to learn? (Select up to 2)
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   'By doing or practicing (hands-on)',
                   'Through reading and theory',
@@ -238,17 +256,13 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                   'By observing or watching videos',
                   'Through art, visuals, or creating something'
                 ].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      value={option}
-                      checked={answers.learningStyle.includes(option)}
-                      onChange={() => handleMultiChoice('learningStyle', option)}
-                      disabled={answers.learningStyle.length >= 2 && !answers.learningStyle.includes(option)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`${localGeorgia.className} text-[#002A3C]`}>{option}</span>
-                  </label>
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.learningStyle.includes(option)}
+                    onClick={() => handleMultiChoice('learningStyle', option)}
+                    disabled={answers.learningStyle.length >= 2 && !answers.learningStyle.includes(option)}
+                  />
                 ))}
               </div>
             </div>
@@ -258,7 +272,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 3. Which environment excites you the most?
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   'Office or business setting',
                   'Creative studio or stage',
@@ -266,17 +280,12 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                   'Laboratory or tech workspace',
                   'Outdoor or travel-based work'
                 ].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="environment"
-                      value={option}
-                      checked={answers.environment === option}
-                      onChange={() => handleSingleChoice('environment', option)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`${localGeorgia.className} text-[#002A3C]`}>{option}</span>
-                  </label>
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.environment === option}
+                    onClick={() => handleSingleChoice('environment', option)}
+                  />
                 ))}
               </div>
             </div>
@@ -286,7 +295,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 4. What motivates you most in school or life?
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   'Achieving goals and recognition',
                   'Discovering how things work',
@@ -294,17 +303,12 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                   'Creating or expressing myself',
                   'Feeling secure and prepared'
                 ].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="motivation"
-                      value={option}
-                      checked={answers.motivation === option}
-                      onChange={() => handleSingleChoice('motivation', option)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`${localGeorgia.className} text-[#002A3C]`}>{option}</span>
-                  </label>
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.motivation === option}
+                    onClick={() => handleSingleChoice('motivation', option)}
+                  />
                 ))}
               </div>
             </div>
@@ -314,7 +318,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 5. What's your biggest concern about college?
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   'Choosing the wrong course',
                   'Financial cost',
@@ -322,17 +326,12 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                   'Not fitting in or belonging',
                   'I don\'t know what I want yet'
                 ].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="concern"
-                      value={option}
-                      checked={answers.concern === option}
-                      onChange={() => handleSingleChoice('concern', option)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`${localGeorgia.className} text-[#002A3C]`}>{option}</span>
-                  </label>
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.concern === option}
+                    onClick={() => handleSingleChoice('concern', option)}
+                  />
                 ))}
               </div>
             </div>
@@ -342,26 +341,15 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 6. How confident are you in your career path?
               </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className={`${localGeorgia.className} text-[#002A3C] text-sm`}>No idea at all</span>
-                  <span className={`${localGeorgia.className} text-[#002A3C] text-sm`}>I've already decided</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <label key={value} className="flex flex-col items-center space-y-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="confidence"
-                        value={value}
-                        checked={answers.confidence === value}
-                        onChange={() => handleConfidenceChange(value)}
-                        className="w-6 h-6"
-                      />
-                      <span className={`${localGeorgia.className} text-[#002A3C] text-sm`}>{value}</span>
-                    </label>
-                  ))}
-                </div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <ChoiceCard
+                    key={value}
+                    label={`Level ${value}`}
+                    selected={answers.confidence === value}
+                    onClick={() => handleConfidenceChange(value)}
+                  />
+                ))}
               </div>
             </div>
 
@@ -370,23 +358,18 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 7. Do you prefer structured or flexible routines?
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   'Structured – I like plans and clear instructions',
                   'Flexible – I prefer freedom to explore and change',
                   'Somewhere in between'
                 ].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="routine"
-                      value={option}
-                      checked={answers.routine === option}
-                      onChange={() => handleSingleChoice('routine', option)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`${localGeorgia.className} text-[#002A3C]`}>{option}</span>
-                  </label>
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.routine === option}
+                    onClick={() => handleSingleChoice('routine', option)}
+                  />
                 ))}
               </div>
             </div>
@@ -396,7 +379,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
                 8. What type of impact do you want to have?
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   'Inspire people through creativity or storytelling',
                   'Solve problems using technology or logic',
@@ -404,17 +387,12 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                   'Improve communities and systems',
                   'Lead and manage people or ideas'
                 ].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="impact"
-                      value={option}
-                      checked={answers.impact === option}
-                      onChange={() => handleSingleChoice('impact', option)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`${localGeorgia.className} text-[#002A3C]`}>{option}</span>
-                  </label>
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.impact === option}
+                    onClick={() => handleSingleChoice('impact', option)}
+                  />
                 ))}
               </div>
             </div>

@@ -151,6 +151,29 @@ const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({ onComplete, initi
   const [showNavigationWarning, setShowNavigationWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const [navigationAllowed, setNavigationAllowed] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  // Smoothly scroll the active question into view when it changes
+  React.useEffect(() => {
+    if (!hasStarted) return;
+
+    // Use rAF to wait for DOM to paint after state updates
+    const frameId = requestAnimationFrame(() => {
+      const activeQuestionContainer = document.querySelector(
+        `[data-question-container="${currentQuestion}"]`
+      ) as HTMLElement | null;
+
+      if (activeQuestionContainer) {
+        activeQuestionContainer.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [currentQuestion, currentSet, hasStarted]);
 
   // Load saved answers from localStorage on component mount
   React.useEffect(() => {
@@ -304,6 +327,9 @@ const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({ onComplete, initi
   const questions = allQuestionSets[currentSet];
 
   const handleAnswerChange = (questionIndex: number, value: number) => {
+    if (!hasStarted) {
+      setHasStarted(true);
+    }
     // Update current set answers
     const newCurrentAnswers = {
       ...answers,
