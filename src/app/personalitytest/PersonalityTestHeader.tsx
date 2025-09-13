@@ -488,7 +488,7 @@ const PersonalityTestHeader = () => {
                           >
                             View Results
                           </button>
-                          <Link href="/personalitytest/about" className={`${localGeorama.className} block px-4 py-2 text-[#4d2c00] hover:bg-gray-50 transition-colors duration-200`}>
+                          <Link href="/resources" className={`${localGeorama.className} block px-4 py-2 text-[#4d2c00] hover:bg-gray-50 transition-colors duration-200`}>
                             About the Test
                           </Link>
                         </div>
@@ -538,7 +538,7 @@ const PersonalityTestHeader = () => {
                       >
                         View Results
                       </button>
-                      <Link href="/personalitytest/about" className={`${localGeorama.className} block px-4 py-3 text-[#4d2c00] hover:bg-white rounded-md mx-2 transition-colors duration-200`}>
+                      <Link href="/resources" className={`${localGeorama.className} block px-4 py-3 text-[#4d2c00] hover:bg-white rounded-md mx-2 transition-colors duration-200`}>
                         About the Test
                       </Link>
                     </div>
