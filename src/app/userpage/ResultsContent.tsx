@@ -20,6 +20,9 @@ interface TestResult {
   studyTips: string;
   personalityGrowthTips: string;
   studentGoals: string;
+  age?: number;
+  gender?: string;
+  isFromPLMar?: boolean;
   generatedAt: string;
   takenAt: string;
   courseRecommendations?: any[];

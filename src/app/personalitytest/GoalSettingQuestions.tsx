@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { localGeorama, localGeorgia } from '../fonts';
+import { apiUrl } from '../../lib/api';
 
 interface GoalSettingAnswers {
   priority: string;
@@ -10,14 +11,18 @@ interface GoalSettingAnswers {
   confidence: number;
   routine: string;
   impact: string;
+  age?: number;
+  gender?: string;
+  isFromPLMar?: boolean;
 }
 
 interface GoalSettingQuestionsProps {
   onComplete?: (answers: GoalSettingAnswers) => void;
   onBack?: () => void;
+  userData?: any; // Add userData prop to access existing profile data
 }
 
-const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete, onBack }) => {
+const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete, onBack, userData }) => {
   const [answers, setAnswers] = useState<GoalSettingAnswers>({
     priority: '',
     learningStyle: [],
@@ -26,27 +31,141 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
     concern: '',
     confidence: 0,
     routine: '',
-    impact: ''
+    impact: '',
+    age: userData?.age || undefined,
+    gender: userData?.gender || '',
+    isFromPLMar: undefined
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNavigationWarning, setShowNavigationWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
+  const [hasAnsweredPLMar, setHasAnsweredPLMar] = useState(false);
 
   // Use ref to track the latest answers for immediate saving
   const answersRef = useRef(answers);
+  
+  // Scroll to top when component mounts (similar to personality test behavior)
+  useEffect(() => {
+    const scrollToTop = () => {
+      const goalSettingStart = document.querySelector('[data-goal-setting-start]');
+      if (goalSettingStart) {
+        goalSettingStart.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        // Fallback: scroll to top of page
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(scrollToTop, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
+  
+  // Function to update user profile with new age/gender data
+  const updateUserProfile = async (newAge?: number, newGender?: string) => {
+    if (!userData || (!newAge && !newGender)) return;
+    
+    try {
+      console.log('Updating user profile with:', { newAge, newGender, userId: userData.id });
+      
+      const response = await fetch(apiUrl('/api/auth/update-profile'), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: userData.id,
+          username: userData.username,
+          email: userData.email,
+          age: newAge || userData.age,
+          gender: newGender || userData.gender
+        }),
+      });
+
+      console.log('Profile update response status:', response.status);
+
+      // Check if response is HTML (error page) instead of JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Received non-JSON response:', text.substring(0, 200));
+        console.error('Response status:', response.status);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Profile update response data:', data);
+      
+      if (data.success) {
+        // Update localStorage with new user data
+        const updatedUserData = { ...userData, age: newAge || userData.age, gender: newGender || userData.gender };
+        localStorage.setItem('userData', JSON.stringify(updatedUserData));
+        console.log('User profile updated successfully');
+      } else {
+        console.error('Profile update failed:', data.message);
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+    }
+  };
+
   // Load saved goal setting answers from localStorage on component mount
+  // But prioritize userData for age and gender if available
   useEffect(() => {
     const savedGoalAnswers = localStorage.getItem('goalSettingAnswers');
     if (savedGoalAnswers) {
       try {
         const parsedAnswers = JSON.parse(savedGoalAnswers);
-        setAnswers(parsedAnswers);
+        
+        // Merge with userData, prioritizing userData for age and gender
+        const mergedAnswers = {
+          ...parsedAnswers,
+          // Only use userData if the saved answers don't already have these values
+          age: parsedAnswers.age || userData?.age || undefined,
+          gender: parsedAnswers.gender || userData?.gender || ''
+        };
+        
+        setAnswers(mergedAnswers);
+        answersRef.current = mergedAnswers;
+        
+        // Check if PLMar question was answered
+        if (parsedAnswers.isFromPLMar !== undefined) {
+          setHasAnsweredPLMar(true);
+        }
       } catch (error) {
         console.error('Error loading saved goal answers:', error);
+        // If parsing fails, still try to use userData
+        if (userData?.age || userData?.gender) {
+          setAnswers(prev => ({
+            ...prev,
+            age: userData.age || prev.age,
+            gender: userData.gender || prev.gender
+          }));
+        }
       }
+    } else if (userData?.age || userData?.gender) {
+      // If no saved answers but user has age/gender, pre-fill them
+      setAnswers(prev => ({
+        ...prev,
+        age: userData.age || prev.age,
+        gender: userData.gender || prev.gender
+      }));
+    }
+  }, [userData]);
+
+  // Scroll to the Goal-Setting form when page appears
+  useEffect(() => {
+    // Find the form container and scroll to it
+    const formContainer = document.querySelector('.bg-white.rounded-lg.shadow-lg');
+    if (formContainer) {
+      formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
+
+  // Note: Profile update is now handled only when "Complete Assessment" is clicked
+  // This useEffect was removed to prevent automatic updates during input/selection
 
   // Save goal setting answers to localStorage whenever they change and update ref
   useEffect(() => {
@@ -54,11 +173,26 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
     localStorage.setItem('goalSettingAnswers', JSON.stringify(answers));
   }, [answers]);
 
+  // Update user profile when age or gender changes (only for logged-in users)
+  // Temporarily disabled to prevent errors - will be re-enabled once backend is stable
+  // useEffect(() => {
+  //   if (userData && (answers.age !== userData.age || answers.gender !== userData.gender)) {
+  //     // Only update if the user has actually made changes (not just initial load)
+  //     const hasAgeChanged = answers.age !== undefined && answers.age !== userData.age;
+  //     const hasGenderChanged = answers.gender !== '' && answers.gender !== userData.gender;
+      
+  //     if (hasAgeChanged || hasGenderChanged) {
+  //       updateUserProfile(answers.age, answers.gender);
+  //     }
+  //   }
+  // }, [answers.age, answers.gender, userData]);
+
   // Check if user has made progress in goal setting
   const hasGoalProgress = () => {
     return answers.priority || answers.learningStyle.length > 0 ||
            answers.environment || answers.motivation || answers.concern ||
-           answers.confidence > 0 || answers.routine || answers.impact;
+           answers.confidence > 0 || answers.routine || answers.impact ||
+           answers.age || answers.gender || hasAnsweredPLMar;
   };
 
   // Add browser warning for page reload/leave during goal setting (only for leaving the site)
@@ -214,7 +348,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
   return (
     <div className="w-full bg-[#FFF4E6] py-12">
       <div className="max-w-4xl mx-auto px-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-8" data-goal-setting-start>
           <h2 className={`${localGeorama.className} text-[#002A3C] text-3xl font-bold text-center mb-8`}>
             Goal-Setting Questions
           </h2>
@@ -342,12 +476,18 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                 6. How confident are you in your career path?
               </h3>
               <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((value) => (
+                {[
+                  { value: 1, label: 'Very uncertain - I have no idea what I want to do' },
+                  { value: 2, label: 'Somewhat uncertain - I have some ideas but need more guidance' },
+                  { value: 3, label: 'Moderately confident - I have a general direction but open to changes' },
+                  { value: 4, label: 'Quite confident - I have a clear path with some flexibility' },
+                  { value: 5, label: 'Very confident - I know exactly what I want to pursue' }
+                ].map((option) => (
                   <ChoiceCard
-                    key={value}
-                    label={`Level ${value}`}
-                    selected={answers.confidence === value}
-                    onClick={() => handleConfidenceChange(value)}
+                    key={option.value}
+                    label={option.label}
+                    selected={answers.confidence === option.value}
+                    onClick={() => handleConfidenceChange(option.value)}
                   />
                 ))}
               </div>
@@ -397,18 +537,103 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               </div>
             </div>
 
+            {/* Question 9: Age */}
+            <div>
+              <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
+                9. What is your age? <span className="text-sm font-normal text-gray-500">(Optional)</span>
+              </h3>
+              {userData?.age && (
+                <p className={`${localGeorgia.className} text-sm text-green-600 mb-2`}>
+                  ✓ Pre-filled from your profile
+                </p>
+              )}
+              <div className="max-w-xs">
+                <input
+                  type="number"
+                  min="13"
+                  max="100"
+                  value={answers.age || ''}
+                  onChange={(e) => setAnswers(prev => ({ ...prev, age: e.target.value ? parseInt(e.target.value) : undefined }))}
+                  placeholder="Enter your age"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002A3C] focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+            </div>
+
+            {/* Question 10: Gender */}
+            <div>
+              <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
+                10. What is your gender? <span className="text-sm font-normal text-gray-500">(Optional)</span>
+              </h3>
+              {userData?.gender && (
+                <p className={`${localGeorgia.className} text-sm text-green-600 mb-2`}>
+                  ✓ Pre-filled from your profile
+                </p>
+              )}
+              <div className="space-y-3">
+                {[
+                  'Male',
+                  'Female',
+                  'Non-binary',
+                  'Prefer not to say'
+                ].map((option) => (
+                  <ChoiceCard
+                    key={option}
+                    label={option}
+                    selected={answers.gender === option}
+                    onClick={() => handleSingleChoice('gender', option)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Question 11: PLMar Status */}
+            <div>
+              <h3 className={`${localGeorama.className} text-[#002A3C] text-lg font-semibold mb-4`}>
+                11. Are you from PLMar or Not? <span className="text-red-500">*</span>
+              </h3>
+              <div className="space-y-3">
+                {[
+                  { value: true, label: 'Yes, I am from PLMar' },
+                  { value: false, label: 'No, I am not from PLMar' }
+                ].map((option) => (
+                  <ChoiceCard
+                    key={option.label}
+                    label={option.label}
+                    selected={answers.isFromPLMar === option.value}
+                    onClick={() => {
+                      setAnswers(prev => ({ ...prev, isFromPLMar: option.value }));
+                      setHasAnsweredPLMar(true);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
             {/* Submit Button */}
             <div className="text-center pt-8">
               <button
                 disabled={isSubmitting}
                 className={`${localGeorama.className} bg-[#002A3C] text-white px-8 py-3 font-semibold hover:bg-[#004E70] transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                 onClick={async () => {
-                  // Validate all questions are answered
+                  // Validate all required questions are answered
                   if (!answers.priority || !answers.environment || !answers.motivation ||
                       !answers.concern || !answers.routine || !answers.impact ||
-                      answers.confidence === 0 || answers.learningStyle.length === 0) {
+                      answers.confidence === 0 || answers.learningStyle.length === 0 ||
+                      !hasAnsweredPLMar) {
                     setShowIncompleteWarning(true);
                     return;
+                  }
+
+                  // Update user profile with age/gender if user doesn't already have them
+                  if (userData && (answers.age || answers.gender)) {
+                    const shouldUpdateAge = answers.age && !userData.age;
+                    const shouldUpdateGender = answers.gender && !userData.gender;
+                    
+                    if (shouldUpdateAge || shouldUpdateGender) {
+                      console.log('Updating user profile before test submission...');
+                      await updateUserProfile(answers.age, answers.gender);
+                    }
                   }
 
                   if (onComplete) {
@@ -417,6 +642,7 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
                     try {
                       // Clear localStorage when completing goal setting
                       localStorage.removeItem('goalSettingAnswers');
+                      
                       onComplete(answers);
                     } catch (error) {
                       console.error('Goal Setting - Submission error:', error);

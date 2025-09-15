@@ -22,6 +22,9 @@ interface GoalSettingAnswers {
   confidence: number;
   routine: string;
   impact: string;
+  age?: number;
+  gender?: string;
+  isFromPLMar?: boolean;
 }
 
 const PersonalityTestFlow: React.FC = () => {
@@ -151,8 +154,12 @@ const PersonalityTestFlow: React.FC = () => {
     // Check if we already have a guest token in localStorage
     let token = localStorage.getItem('guestToken');
     if (!token) {
-      // Generate a simple UUID-like token
-      token = 'guest-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      // Generate a proper UUID v4
+      token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
       localStorage.setItem('guestToken', token);
     }
     setGuestToken(token);
@@ -183,8 +190,14 @@ const PersonalityTestFlow: React.FC = () => {
     setGoalAnswers(answers);
     setCurrentPhase('submitting');
 
-    // Submit the complete test
-    await submitTest(personalityAnswers, answers);
+    try {
+      // Submit the complete test
+      await submitTest(personalityAnswers, answers);
+    } catch (error) {
+      console.error('Goal Setting Complete - Error during submission:', error);
+      setError(error instanceof Error ? error.message : 'Failed to submit test');
+      setCurrentPhase('goals'); // Go back to goals phase on error
+    }
   };
 
   const submitTest = async (personality: PersonalityAnswers, goals: GoalSettingAnswers) => {
@@ -213,8 +226,18 @@ const PersonalityTestFlow: React.FC = () => {
         throw new Error(`Invalid number of personality answers: ${mergedCount}. Expected 100.`);
       }
 
+      // Convert string keys to integer keys for backend compatibility
+      const answersForBackend: Record<number, number> = {};
+      for (const [key, value] of Object.entries(mergedAnswers)) {
+        const questionIndex = parseInt(key, 10);
+        if (isNaN(questionIndex)) {
+          throw new Error(`Invalid question index: ${key}. Must be a number.`);
+        }
+        answersForBackend[questionIndex] = value;
+      }
+
       // Validate that all answers are numbers between 1-5
-      for (const [key, value] of Object.entries(personality)) {
+      for (const [key, value] of Object.entries(answersForBackend)) {
         if (typeof value !== 'number' || value < 1 || value > 5) {
           throw new Error(`Invalid answer for question ${key}: ${value}. Must be a number between 1-5.`);
         }
@@ -235,11 +258,13 @@ const PersonalityTestFlow: React.FC = () => {
       if (isGuest) {
         // Guest submission
         submission = {
-          answers: mergedAnswers as any,
+          answers: answersForBackend,
           goalSettings: goals
         };
         endpoint = apiUrl(`/api/personality-test/submit/guest?guestToken=${guestToken}`);
         console.log('Submit Test - Guest submission to:', endpoint);
+        console.log('Submit Test - Guest token:', guestToken);
+        console.log('Submit Test - Is guest:', isGuest);
       } else {
         // User submission
         if (!userData) {
@@ -247,7 +272,7 @@ const PersonalityTestFlow: React.FC = () => {
         }
         submission = {
           userId: userData.id,
-          answers: mergedAnswers as any,
+          answers: answersForBackend,
           goalSettings: goals
         };
         endpoint = apiUrl('/api/personality-test/submit/user');
@@ -255,20 +280,45 @@ const PersonalityTestFlow: React.FC = () => {
       }
 
       console.log('Submit Test - Submission payload:', submission);
+      console.log('Submit Test - Submission payload size:', JSON.stringify(submission).length);
+      console.log('Submit Test - Goal settings:', submission.goalSettings);
+      console.log('Submit Test - Answers count:', Object.keys(submission.answers).length);
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submission)
-      });
+      console.log('Submit Test - Making request to:', endpoint);
+      console.log('Submit Test - Request body size:', JSON.stringify(submission).length);
+      
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(submission)
+        });
+      } catch (error) {
+        console.error('Submit Test - Network error:', error);
+        throw new Error(`Network error: ${error instanceof Error ? error.message : 'Unknown network error'}`);
+      }
 
       console.log('Submit Test - Response status:', response.status);
       console.log('Submit Test - Response ok:', response.ok);
 
-      const data = await response.json();
-      console.log('Submit Test - Response data:', data);
+      if (!response.ok) {
+        console.error('Submit Test - HTTP Error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Submit Test - Error response body:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      let data;
+      try {
+        data = await response.json();
+        console.log('Submit Test - Response data:', data);
+      } catch (error) {
+        console.error('Submit Test - JSON parsing error:', error);
+        throw new Error('Invalid response format from server');
+      }
 
       if (data.status === 'SUCCESS') {
         console.log('Submit Test - Success! Session ID:', data.sessionId);
@@ -298,12 +348,16 @@ const PersonalityTestFlow: React.FC = () => {
         }, 3000);
       } else {
         console.error('Submit Test - Error response:', data);
-        throw new Error(data.message || 'Failed to submit test');
+        const errorMessage = data.message || data.error || 'Failed to submit test';
+        console.error('Submit Test - Error message:', errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (err) {
       console.error('Submit Test - Exception:', err);
-      setError(err instanceof Error ? err.message : 'Failed to submit test');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit test';
+      setError(errorMessage);
       setCurrentPhase('goals'); // Go back to goals phase
+      throw err; // Re-throw to be caught by handleGoalSettingComplete
     }
   };
 
@@ -356,7 +410,7 @@ const PersonalityTestFlow: React.FC = () => {
   }
 
   if (currentPhase === 'goals') {
-    return <GoalSettingQuestions onComplete={handleGoalSettingComplete} onBack={handleGoalSettingBack} />;
+    return <GoalSettingQuestions onComplete={handleGoalSettingComplete} onBack={handleGoalSettingBack} userData={userData} />;
   }
 
   if (currentPhase === 'submitting') {

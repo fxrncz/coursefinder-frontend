@@ -23,6 +23,8 @@ const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
+  const [isAuthMenuAnimating, setIsAuthMenuAnimating] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
   const pathname = usePathname();
@@ -112,6 +114,42 @@ const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
     return () => window.removeEventListener('scroll', throttledScrollHandler);
   }, [handleScroll]);
 
+  // Toggle auth menu with animation
+  const toggleAuthMenu = () => {
+    if (isAuthMenuOpen) {
+      // Closing animation
+      setIsAuthMenuAnimating(true);
+      setTimeout(() => {
+        setIsAuthMenuOpen(false);
+        setIsAuthMenuAnimating(false);
+      }, 150); // Match transition duration
+    } else {
+      // Opening animation
+      setIsAuthMenuOpen(true);
+      setIsAuthMenuAnimating(false);
+    }
+  };
+
+  // Close auth menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isAuthMenuOpen && !isAuthMenuAnimating) {
+        const target = event.target as Element;
+        const authContainer = target.closest('.auth-menu-container');
+        const authDropdown = target.closest('.auth-dropdown');
+        
+        if (!authContainer && !authDropdown) {
+          toggleAuthMenu();
+        }
+      }
+    };
+
+    if (isAuthMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isAuthMenuOpen, isAuthMenuAnimating]);
+
   // Check authentication status on component mount and when userData changes
   useEffect(() => {
     const checkAuthStatus = () => {
@@ -181,7 +219,7 @@ const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
             </div>
             
             {/* Main Header - Optimized Animation */}
-            <div className={`bg-white flex items-center justify-center px-0 pt-3 pb-4 transition-all duration-300 ease-in-out ${isScrolled ? 'fixed top-0 left-0 right-0 z-40 shadow-lg bg-white/95 backdrop-blur-sm' : 'relative'}`}>
+            <div className={`bg-white flex items-center justify-center px-0 pt-3 pb-4 transition-all duration-300 ease-in-out ${isScrolled ? 'sm:fixed sm:top-0 sm:left-0 sm:right-0 sm:z-40 sm:shadow-lg sm:bg-white/95 sm:backdrop-blur-sm' : 'relative'}`}>
               {/* Mobile Layout */}
               <div className="flex items-center justify-between w-full sm:hidden px-4">
                 {/* Your Account/Logout - Left Side */}
@@ -264,7 +302,7 @@ const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
               </div>
               
               {/* Mobile Navigation Menu - Fixed positioning when scrolled */}
-              <div className={`sm:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 transition-all duration-300 ${isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'} ${isScrolled ? 'shadow-lg' : ''}`}>
+              <div className={`sm:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 transition-all duration-300 ${isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'} ${isScrolled ? 'sm:shadow-lg' : ''}`}>
                 <nav className="flex flex-col py-4 px-8 space-y-4">
                   <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     HOME
@@ -306,23 +344,47 @@ const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
             </div>
             
             {/* Main Header - Optimized Animation */}
-            <div className={`bg-white flex items-center justify-center px-0 pt-3 pb-4 transition-all duration-300 ease-in-out ${isScrolled ? 'fixed top-0 left-0 right-0 z-40 shadow-lg bg-white/95 backdrop-blur-sm' : 'relative'}`}>
+            <div className={`bg-white flex items-center justify-center px-0 pt-3 pb-4 transition-all duration-300 ease-in-out ${isScrolled ? 'sm:fixed sm:top-0 sm:left-0 sm:right-0 sm:z-40 sm:shadow-lg sm:bg-white/95 sm:backdrop-blur-sm' : 'relative'}`}>
               {/* Mobile Layout */}
-              <div className="flex items-center justify-between w-full sm:hidden">
-                {/* Login/Create Account - Left Side */}
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between w-full sm:hidden px-4">
+                {/* Auth Menu Icon - Left Side */}
+                <div className="relative auth-menu-container">
                   <button 
-                    onClick={() => setAuthDialogOpen(true)}
-                    className="text-[#A75F00] hover:text-yellow-300 text-xs bg-transparent border-none cursor-pointer"
+                    onClick={toggleAuthMenu}
+                    className="flex items-center justify-center w-8 h-8 text-[#A75F00] hover:text-yellow-300 transition-colors"
                   >
-                    LOGIN
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </button>
-                  <button 
-                    onClick={() => setRegisterDialogOpen(true)}
-                    className="text-[#A75F00] hover:text-yellow-300 text-xs bg-transparent border-none cursor-pointer"
-                  >
-                    SIGN UP
-                  </button>
+                  
+                  {/* Auth Dropdown Menu */}
+                  {(isAuthMenuOpen || isAuthMenuAnimating) && (
+                    <div className={`absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-[9999] auth-dropdown transition-all duration-150 ease-out ${
+                      isAuthMenuOpen && !isAuthMenuAnimating 
+                        ? 'opacity-100 translate-y-0 scale-100' 
+                        : 'opacity-0 -translate-y-2 scale-95'
+                    }`}>
+                      <button 
+                        onClick={() => {
+                          setAuthDialogOpen(true);
+                          toggleAuthMenu();
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-[#A75F00] hover:bg-gray-50 transition-colors first:rounded-t-md"
+                      >
+                        LOGIN
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setRegisterDialogOpen(true);
+                          toggleAuthMenu();
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-[#A75F00] hover:bg-gray-50 transition-colors border-t border-gray-200 last:rounded-b-md"
+                      >
+                        SIGN UP
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Logo and Title - Center */}
@@ -372,7 +434,7 @@ const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
               </div>
               
               {/* Mobile Navigation Menu - Fixed positioning when scrolled */}
-              <div className={`sm:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 transition-all duration-300 ${isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'} ${isScrolled ? 'shadow-lg' : ''}`}>
+              <div className={`sm:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 transition-all duration-300 ${isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'} ${isScrolled ? 'sm:shadow-lg' : ''}`}>
                 <nav className="flex flex-col py-4 px-8 space-y-4">
                   <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline py-2`}>
                     HOME

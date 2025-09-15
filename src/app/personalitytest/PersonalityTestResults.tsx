@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { apiUrl } from '../../lib/api';
 import { localGeorama, localGeorgia } from '../fonts';
 
+// Extend Window interface for our retry flag
+declare global {
+  interface Window {
+    retryingDetailedScoring?: boolean;
+  }
+}
+
 interface PersonalityTestResultsProps {
   userId?: number;
   sessionId?: string | null;
@@ -23,10 +30,30 @@ interface PersonalityResult {
   studyTips: string;
   personalityGrowthTips: string;
   studentGoals: string;
+  age?: number;
+  gender?: string;
+  isFromPLMar?: boolean;
   generatedAt: string;
   takenAt: string;
   courseRecommendations?: CourseRecommendation[];
   detailedMbtiInfo?: DetailedMbtiInfo;
+  detailedScoring?: DetailedScoringData;
+}
+
+interface DetailedScoringData {
+  riasecScores: { [key: string]: ScoreData };
+  mbtiScores: { [key: string]: ScoreData };
+  finalRiasecCode: string;
+  finalMbtiType: string;
+  riasecGraphData?: any;
+  mbtiGraphData?: any;
+}
+
+interface ScoreData {
+  raw: number;
+  percentage: number; // Actual calculated percentage
+  label: string;
+  description: string;
 }
 
 interface DetailedMbtiInfo {
@@ -88,6 +115,118 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Function to fetch detailed scoring data
+  const fetchDetailedScoringData = async (testResultId?: number, sessionId?: string): Promise<DetailedScoringData | null> => {
+    try {
+      console.log('Fetching detailed scoring data for testResultId:', testResultId, 'sessionId:', sessionId);
+      
+      // Prefer test_result_id over session_id for better reliability
+      let checkResponse;
+      let checkData;
+      
+      if (testResultId) {
+        console.log('Using test_result_id endpoint:', testResultId);
+        checkResponse = await fetch(apiUrl(`/api/personality-test/scores/${testResultId}`));
+        checkData = await checkResponse.json();
+        console.log('Test result ID scores response:', checkData);
+      } else if (sessionId) {
+        console.log('Falling back to session_id endpoint:', sessionId);
+        checkResponse = await fetch(apiUrl(`/api/personality-test/check-scores/${sessionId}`));
+        checkData = await checkResponse.json();
+        console.log('Session ID scores response:', checkData);
+      } else {
+        console.log('No test result ID or session ID provided');
+        return null;
+      }
+      
+      console.log('Response status:', checkResponse.status);
+      console.log('Response headers:', checkResponse.headers);
+      
+      if (checkData.scoringDataExists && checkData.riasecScores && checkData.mbtiScores) {
+        console.log('Found existing detailed scoring data');
+        console.log('RIASEC scores:', checkData.riasecScores);
+        console.log('MBTI scores:', checkData.mbtiScores);
+        console.log('Final RIASEC code:', checkData.finalRiasecCode);
+        console.log('Final MBTI type:', checkData.finalMbtiType);
+        
+        // Debug the structure of the scores
+        console.log('RIASEC scores structure:', JSON.stringify(checkData.riasecScores, null, 2));
+        console.log('MBTI scores structure:', JSON.stringify(checkData.mbtiScores, null, 2));
+        
+        // Debug individual score access
+        if (checkData.riasecScores && checkData.riasecScores['R']) {
+          console.log('RIASEC R score data:', checkData.riasecScores['R']);
+          console.log('RIASEC R percentage:', checkData.riasecScores['R'].percentage);
+          console.log('RIASEC R percentage type:', typeof checkData.riasecScores['R'].percentage);
+        }
+        if (checkData.mbtiScores && checkData.mbtiScores['E']) {
+          console.log('MBTI E score data:', checkData.mbtiScores['E']);
+          console.log('MBTI E percentage:', checkData.mbtiScores['E'].percentage);
+          console.log('MBTI E percentage type:', typeof checkData.mbtiScores['E'].percentage);
+        }
+        
+        return {
+          riasecScores: checkData.riasecScores,
+          mbtiScores: checkData.mbtiScores,
+          finalRiasecCode: checkData.finalRiasecCode,
+          finalMbtiType: checkData.finalMbtiType
+        };
+      }
+      
+      // If no data exists, try to regenerate it
+      console.log('No detailed scoring data found, attempting to regenerate...');
+      const regenerateResponse = await fetch(apiUrl(`/api/personality-test/force-regenerate-scoring/${sessionId}`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const regenerateData = await regenerateResponse.json();
+      console.log('Regenerate response:', regenerateData);
+      
+      if (regenerateData.success) {
+        console.log('Detailed scoring data regenerated successfully');
+        // Try to fetch again
+        const retryResponse = await fetch(apiUrl(`/api/personality-test/check-scores/${sessionId}`));
+        const retryData = await retryResponse.json();
+        console.log('Retry check response:', retryData);
+        
+        if (retryData.scoringDataExists && retryData.riasecScores && retryData.mbtiScores) {
+          return {
+            riasecScores: retryData.riasecScores,
+            mbtiScores: retryData.mbtiScores,
+            finalRiasecCode: retryData.finalRiasecCode,
+            finalMbtiType: retryData.finalMbtiType
+          };
+        }
+      }
+      
+      // If regeneration fails, try the test endpoint for sample data
+      console.log('Trying test endpoint for sample data...');
+      const testResponse = await fetch(apiUrl(`/api/personality-test/test-scoring/${sessionId}`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const testData = await testResponse.json();
+      console.log('Test data response:', testData);
+      
+      if (testData.success && testData.data) {
+        console.log('Using test sample data');
+        return testData.data;
+      }
+      
+      console.log('No detailed scoring data available');
+      return null;
+    } catch (error) {
+      console.error('Error fetching detailed scoring data:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     fetchResults();
   }, [userId, sessionId, isGuest]);
@@ -103,10 +242,20 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
           response = await fetch(apiUrl(`/api/personality-test/result/enhanced/session/${sessionId}`));
           const enhancedData = await response.json();
           if (enhancedData.status === 'SUCCESS') {
-            setResults(enhancedData.result);
+            const result = enhancedData.result;
+            
+            // Fetch detailed scoring data using test result ID first, fallback to session ID
+            if (result.id || result.sessionId) {
+              const detailedScoring = await fetchDetailedScoringData(result.id, result.sessionId);
+              if (detailedScoring) {
+                result.detailedScoring = detailedScoring;
+              }
+            }
+            
+            setResults(result);
             // Check if course path needs regeneration (old format)
-            if ((enhancedData.result.coursePath && !enhancedData.result.coursePath.includes(':')) ||
-                (enhancedData.result.careerSuggestions && !enhancedData.result.careerSuggestions.includes(':'))) {
+            if ((result.coursePath && !result.coursePath.includes(':')) ||
+                (result.careerSuggestions && !result.careerSuggestions.includes(':'))) {
               await regenerateCourseDescriptions(sessionId);
             }
             return;
@@ -122,9 +271,19 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
           response = await fetch(apiUrl(`/api/personality-test/result/enhanced/session/${sessionId}`));
           const enhancedData = await response.json();
           if (enhancedData.status === 'SUCCESS') {
-            setResults(enhancedData.result);
+            const result = enhancedData.result;
+            
+            // Fetch detailed scoring data using test result ID first, fallback to session ID
+            if (result.id || result.sessionId) {
+              const detailedScoring = await fetchDetailedScoringData(result.id, result.sessionId);
+              if (detailedScoring) {
+                result.detailedScoring = detailedScoring;
+              }
+            }
+            
+            setResults(result);
             // Check if course path needs regeneration (old format)
-            if (enhancedData.result.coursePath && !enhancedData.result.coursePath.includes(':')) {
+            if (result.coursePath && !result.coursePath.includes(':')) {
               await regenerateCourseDescriptions(sessionId);
             }
             return;
@@ -140,13 +299,23 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
           response = await fetch(apiUrl(`/api/personality-test/result/enhanced/user/${userId}`));
           const enhancedData = await response.json();
           if (enhancedData.status === 'SUCCESS') {
-            setResults(enhancedData.result);
+            const result = enhancedData.result;
+            
+            // Fetch detailed scoring data using test result ID first, fallback to session ID
+            if (result.id || result.sessionId) {
+              const detailedScoring = await fetchDetailedScoringData(result.id, result.sessionId);
+              if (detailedScoring) {
+                result.detailedScoring = detailedScoring;
+              }
+            }
+            
+            setResults(result);
             // Check if course path needs regeneration (old format)
-            if ((enhancedData.result.coursePath && !enhancedData.result.coursePath.includes(':')) ||
-                (enhancedData.result.careerSuggestions && !enhancedData.result.careerSuggestions.includes(':'))) {
+            if ((result.coursePath && !result.coursePath.includes(':')) ||
+                (result.careerSuggestions && !result.careerSuggestions.includes(':'))) {
               // For user results, we need to get the session ID from the result
-              if (enhancedData.result.sessionId) {
-                await regenerateCourseDescriptions(enhancedData.result.sessionId);
+              if (result.sessionId) {
+                await regenerateCourseDescriptions(result.sessionId);
               }
             }
             return;
@@ -163,7 +332,17 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
       const data = await response.json();
 
       if (data.status === 'SUCCESS') {
-        setResults(data.result);
+        const result = data.result;
+        
+        // Fetch detailed scoring data using test result ID first, fallback to session ID
+        if (result.id || result.sessionId) {
+          const detailedScoring = await fetchDetailedScoringData(result.id, result.sessionId);
+          if (detailedScoring) {
+            result.detailedScoring = detailedScoring;
+          }
+        }
+        
+        setResults(result);
         // Check if course path needs regeneration (old format)
         const needsRegen = (data.result.coursePath && !data.result.coursePath.includes(':')) ||
                            (data.result.careerSuggestions && !data.result.careerSuggestions.includes(':'));
@@ -334,7 +513,9 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
     );
   }
 
-  const colorTheme = getMBTIColorTheme(results.mbtiType);
+  // Use the correct MBTI type from detailed scoring data if available, fallback to results.mbtiType
+  const actualMbtiType = results.detailedScoring?.finalMbtiType || results.mbtiType;
+  const colorTheme = getMBTIColorTheme(actualMbtiType);
 
   return (
     <div className="w-full bg-[#FFF4E6] min-h-screen py-8">
@@ -351,107 +532,170 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                 <div className="text-center mb-12">
                   <div className="inline-flex items-center justify-center w-32 h-32 bg-gradient-to-br from-[#004E70] to-[#00A3CC] rounded-full mb-6 shadow-2xl">
                     <span className={`${localGeorama.className} text-white text-4xl font-bold`}>
-                      {results.mbtiType}
+                      {actualMbtiType}
                     </span>
                   </div>
                   <h2 className={`${localGeorama.className} text-4xl font-bold text-[#002A3C] mb-6`}>
-                    {results.detailedMbtiInfo?.title || getMBTIDescription(results.mbtiType, results.detailedMbtiInfo).split(' - ')[0]}
+                    {results.detailedMbtiInfo?.title || getMBTIDescription(actualMbtiType, results.detailedMbtiInfo).split(' - ')[0]}
                   </h2>
                   <p className={`${localGeorgia.className} text-xl text-[#666] max-w-3xl mx-auto leading-relaxed`}>
-                    {results.detailedMbtiInfo?.description || getMBTIDescription(results.mbtiType, results.detailedMbtiInfo).split(' - ')[1] || 'Unique personality type'}
+                    {results.detailedMbtiInfo?.description || getMBTIDescription(actualMbtiType, results.detailedMbtiInfo).split(' - ')[1] || 'Unique personality type'}
                   </p>
                 </div>
 
-                {/* Interactive MBTI Traits Visualization */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
-                  <h3 className={`${localGeorama.className} text-3xl font-bold text-[#002A3C] mb-8 text-center`}>
+                {/* Modern MBTI Traits Visualization */}
+                <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-4 md:p-6 lg:p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <h3 className={`${localGeorama.className} text-xl md:text-2xl lg:text-3xl font-bold text-[#002A3C] mb-4 md:mb-6 lg:mb-8 text-center`}>
                     Your Personality Traits Breakdown
                   </h3>
-                  <div className="grid md:grid-cols-2 gap-8">
+                  <div className="grid md:grid-cols-2 gap-3 md:gap-4 lg:gap-6">
                     {(() => {
-                      // Define the four MBTI dimensions
+                      // Define the four MBTI dimensions with enhanced styling
                       const dimensions = [
                         { 
                           letters: ['E', 'I'], 
                           names: ['Extraversion', 'Introversion'], 
                           descriptions: ['Outgoing, energetic, social', 'Reflective, reserved, focused'],
-                          colors: ['from-green-400 to-emerald-500', 'from-blue-400 to-cyan-500']
+                          icons: ['🌟', '🧘'],
+                          colors: ['#10b981', '#3b82f6'],
+                          lightColors: ['bg-emerald-50', 'bg-blue-50'],
+                          category: 'Energy Source'
                         },
                         { 
                           letters: ['S', 'N'], 
                           names: ['Sensing', 'Intuition'], 
                           descriptions: ['Practical, detail-oriented, concrete', 'Abstract, future-focused, innovative'],
-                          colors: ['from-orange-400 to-red-500', 'from-purple-400 to-pink-500']
+                          icons: ['🔍', '💡'],
+                          colors: ['#f59e0b', '#8b5cf6'],
+                          lightColors: ['bg-amber-50', 'bg-purple-50'],
+                          category: 'Information Processing'
                         },
                         { 
                           letters: ['T', 'F'], 
                           names: ['Thinking', 'Feeling'], 
                           descriptions: ['Logical, objective, analytical', 'Empathetic, values-driven, harmonious'],
-                          colors: ['from-teal-400 to-blue-500', 'from-rose-400 to-pink-500']
+                          icons: ['🧠', '❤️'],
+                          colors: ['#06b6d4', '#ec4899'],
+                          lightColors: ['bg-cyan-50', 'bg-pink-50'],
+                          category: 'Decision Making'
                         },
                         { 
                           letters: ['J', 'P'], 
                           names: ['Judging', 'Perceiving'], 
                           descriptions: ['Structured, decisive, organized', 'Flexible, adaptable, spontaneous'],
-                          colors: ['from-amber-400 to-orange-500', 'from-lime-400 to-green-500']
+                          icons: ['📋', '🎯'],
+                          colors: ['#ea580c', '#84cc16'],
+                          lightColors: ['bg-orange-50', 'bg-lime-50'],
+                          category: 'Lifestyle Approach'
                         }
                       ];
                       
                       return dimensions.map((dimension, index) => {
-                        const mbtiLetter = results.mbtiType[index];
-                        const preferredIndex = dimension.letters.indexOf(mbtiLetter);
-                        const preferredTrait = {
-                          letter: mbtiLetter,
-                          name: dimension.names[preferredIndex],
-                          description: dimension.descriptions[preferredIndex],
-                          color: dimension.colors[preferredIndex],
-                          opposite: dimension.names[1 - preferredIndex]
-                        };
+                        const mbtiLetter = actualMbtiType[index];
                         
-                        // Calculate consistent percentage based on MBTI type
-                        const getConsistentPercentage = (mbtiType: string, dimensionIndex: number) => {
-                          // Create a deterministic hash from MBTI type and dimension
-                          const hashString = mbtiType + dimensionIndex.toString();
-                          let hash = 0;
-                          for (let i = 0; i < hashString.length; i++) {
-                            const char = hashString.charCodeAt(i);
-                            hash = ((hash << 5) - hash) + char;
-                            hash = hash & hash; // Convert to 32-bit integer
+                        // Get percentages for both traits in this dimension
+                        const getPercentages = () => {
+                          if (results.detailedScoring?.mbtiScores) {
+                            const letter1Data = results.detailedScoring.mbtiScores[dimension.letters[0]];
+                            const letter2Data = results.detailedScoring.mbtiScores[dimension.letters[1]];
+                            
+                            if (letter1Data && letter2Data) {
+                              return {
+                                [dimension.letters[0]]: Math.round(letter1Data.percentage),
+                                [dimension.letters[1]]: Math.round(letter2Data.percentage)
+                              };
+                            }
                           }
-                          
-                          // Use hash to generate consistent percentage between 65-85%
-                          const normalizedHash = Math.abs(hash) % 21; // 0-20 range
-                          const percentage = 65 + normalizedHash; // 65-85% range
-                          return percentage;
+                          return {
+                            [dimension.letters[0]]: 0,
+                            [dimension.letters[1]]: 0
+                          };
                         };
                         
-                        const percentage = getConsistentPercentage(results.mbtiType, index);
+                        const percentages = getPercentages();
+                        const dominantIndex = percentages[dimension.letters[0]] > percentages[dimension.letters[1]] ? 0 : 1;
+                        const dominantLetter = dimension.letters[dominantIndex];
                         
                         return (
-                          <div key={index} className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-4 h-4 bg-gradient-to-r ${preferredTrait.color} rounded-full`}></div>
-                                <h4 className={`${localGeorama.className} font-bold text-xl text-[#002A3C]`}>
-                                  {preferredTrait.name}
-                                </h4>
-                              </div>
-                              <div className={`px-4 py-2 bg-gradient-to-r ${preferredTrait.color} text-white rounded-full text-base font-bold`}>
-                                {preferredTrait.letter}
-                              </div>
+                          <div key={index} className="bg-white rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
+                            {/* Category Header */}
+                            <div className="text-center mb-3 md:mb-4 lg:mb-6">
+                              <h4 className={`${localGeorama.className} text-sm md:text-base lg:text-lg font-bold text-[#002A3C] mb-1 md:mb-2`}>
+                                {dimension.category}
+                              </h4>
+                              <div className="w-12 md:w-14 lg:w-16 h-0.5 md:h-1 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full mx-auto"></div>
                             </div>
-                            <p className={`${localGeorgia.className} text-base text-[#666] mb-4`}>
-                              {preferredTrait.description}
-                            </p>
-                            <div className="w-full bg-gray-200 rounded-full h-3">
-                              <div 
-                                className={`bg-gradient-to-r ${preferredTrait.color} h-3 rounded-full transition-all duration-1000 ease-out`} 
-                                style={{width: `${percentage}%`}}
-                              ></div>
-                            </div>
-                            <div className="flex justify-between text-sm text-gray-500 mt-2">
-                              <span>{preferredTrait.opposite}</span>
-                              <span className="font-semibold">{percentage}%</span>
+                            
+                            {/* Two Traits Comparison */}
+                            <div className="space-y-2 md:space-y-3 lg:space-y-4">
+                              {dimension.letters.map((letter, letterIndex) => {
+                                const percentage = percentages[letter];
+                                const isPreferred = letter === dominantLetter;
+                                const name = dimension.names[letterIndex];
+                                const description = dimension.descriptions[letterIndex];
+                                const icon = dimension.icons[letterIndex];
+                                const color = dimension.colors[letterIndex];
+                                const lightColor = dimension.lightColors[letterIndex];
+                                
+                                return (
+                                  <div key={letter} className={`relative p-2 md:p-3 lg:p-4 rounded-lg md:rounded-xl transition-all duration-300 ${
+                                    isPreferred 
+                                      ? `${lightColor} border-2 ring-2 ring-opacity-20 shadow-lg transform scale-[1.02]` 
+                                      : 'bg-gray-50 border border-gray-200'
+                                  }`} style={{
+                                    borderColor: isPreferred ? color : undefined,
+                                    '--ring-color': isPreferred ? color : undefined
+                                  } as React.CSSProperties}>
+                                    <div className="flex items-center justify-between mb-2 md:mb-3">
+                                      <div className="flex items-center space-x-2 md:space-x-3">
+                                        <div className="text-lg md:text-xl lg:text-2xl">{icon}</div>
+                                        <div>
+                                          <div className="flex items-center space-x-1 md:space-x-2">
+                                            <span className={`font-bold text-sm md:text-base lg:text-lg ${isPreferred ? 'text-[#002A3C]' : 'text-gray-600'}`}>
+                                              {name}
+                                            </span>
+                                            <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-bold text-white`} 
+                                                  style={{ backgroundColor: color }}>
+                                              {letter}
+                                            </span>
+                                          </div>
+                                          <p className={`text-xs md:text-sm ${isPreferred ? 'text-gray-700' : 'text-gray-500'} mt-0.5 md:mt-1`}>
+                                            {description}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className={`text-lg md:text-xl lg:text-2xl font-bold ${isPreferred ? 'text-[#002A3C]' : 'text-gray-500'}`}>
+                                          {percentage}%
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Progress Bar */}
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
+                                      <div 
+                                        className={`h-1.5 md:h-2 rounded-full transition-all duration-1500 ease-out ${
+                                          isPreferred ? 'shadow-md' : 'opacity-60'
+                                        }`}
+                                        style={{
+                                          width: `${percentage}%`,
+                                          backgroundColor: color,
+                                          boxShadow: isPreferred ? `0 0 10px ${color}40` : 'none'
+                                        }}
+                                      ></div>
+                                    </div>
+                                    
+                                    {/* Preferred Indicator */}
+                                    {isPreferred && (
+                                      <div className="absolute -top-1 md:-top-2 -right-1 md:-right-2">
+                                        <div className="bg-yellow-400 text-yellow-900 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full shadow-md">
+                                          PREFERRED
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         );
@@ -460,50 +704,300 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                   </div>
                 </div>
 
-                {/* RIASEC Interests Radar Visualization */}
-                <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
-                  <h3 className={`${localGeorama.className} text-3xl font-bold text-[#002A3C] mb-8 text-center`}>
+                {/* Modern RIASEC Career Interests Visualization */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 md:p-6 lg:p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <h3 className={`${localGeorama.className} text-xl md:text-2xl lg:text-3xl font-bold text-[#002A3C] mb-4 md:mb-6 lg:mb-8 text-center`}>
                     Your Career Interests Profile
                   </h3>
-                  <div className="grid md:grid-cols-3 gap-6">
-                    {results.riasecCode.split('').map((code, index) => {
-                      const interests = {
-                        'R': { name: 'Realistic', description: 'Hands-on, practical work', icon: '🔧', color: 'from-red-400 to-orange-500' },
-                        'I': { name: 'Investigative', description: 'Research and analysis', icon: '🔬', color: 'from-blue-400 to-cyan-500' },
-                        'A': { name: 'Artistic', description: 'Creative and expressive', icon: '🎨', color: 'from-purple-400 to-pink-500' },
-                        'S': { name: 'Social', description: 'Helping and teaching others', icon: '👥', color: 'from-green-400 to-emerald-500' },
-                        'E': { name: 'Enterprising', description: 'Leadership and business', icon: '💼', color: 'from-yellow-400 to-orange-500' },
-                        'C': { name: 'Conventional', description: 'Organized and detailed work', icon: '📊', color: 'from-indigo-400 to-blue-500' }
-                      };
-                      const interest = interests[code as keyof typeof interests];
-                      const strength = (3 - index) * 25; // Higher strength for earlier letters
-                      return (
-                        <div key={index} className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-                          <div className="text-center">
-                            <div className="text-4xl mb-3">{interest.icon}</div>
-                            <h4 className={`${localGeorama.className} font-bold text-xl text-[#002A3C] mb-3`}>
-                              {interest.name}
-                            </h4>
-                            <p className={`${localGeorgia.className} text-base text-[#666] mb-4`}>
-                              {interest.description}
-                            </p>
-                            <div className="relative">
-                              <div className="w-full bg-gray-200 rounded-full h-4">
-                                <div 
-                                  className={`bg-gradient-to-r ${interest.color} h-4 rounded-full transition-all duration-1000 ease-out`}
-                                  style={{width: `${strength}%`}}
-                                ></div>
-                              </div>
-                              <div className="flex justify-between text-sm text-gray-500 mt-2">
-                                <span>Low</span>
-                                <span className="font-bold text-xl">{strength}%</span>
-                                <span>High</span>
+                  
+                  {/* Primary Interests (Top 2) */}
+                  <div className="mb-4 md:mb-6 lg:mb-8">
+                    <div className="text-center mb-3 md:mb-4 lg:mb-6">
+                      <h4 className={`${localGeorama.className} text-lg md:text-xl font-bold text-[#002A3C] mb-1 md:mb-2`}>
+                        Your Primary Career Interests
+                      </h4>
+                      <div className="w-16 md:w-18 lg:w-20 h-0.5 md:h-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full mx-auto"></div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-3 md:gap-4 lg:gap-6 mb-4 md:mb-6 lg:mb-8">
+                      {(() => {
+                        // Get percentages and sort by percentage (highest first)
+                        const getPercentages = () => {
+                          if (results.detailedScoring?.riasecScores) {
+                            const percentages: { [key: string]: number } = {};
+                            ['R', 'I', 'A', 'S', 'E', 'C'].forEach(code => {
+                              const data = results.detailedScoring?.riasecScores[code];
+                              if (data) {
+                                percentages[code] = Math.round(data.percentage);
+                              }
+                            });
+                            return percentages;
+                          }
+                          return {};
+                        };
+                        
+                        const percentages = getPercentages();
+                        
+                        // Sort the RIASEC codes by percentage (highest first)
+                        const sortedCodes = results.riasecCode.split('').sort((a, b) => {
+                          const aPercentage = percentages[a] || 0;
+                          const bPercentage = percentages[b] || 0;
+                          return bPercentage - aPercentage;
+                        });
+                        
+                        return sortedCodes.map((code, index) => {
+                          const interests = {
+                          'R': { 
+                            name: 'Realistic', 
+                            description: 'Hands-on, practical work with tools and machines', 
+                            icon: '🔧', 
+                            color: '#dc2626',
+                            lightColor: 'bg-red-50',
+                            category: 'Doers'
+                          },
+                          'I': { 
+                            name: 'Investigative', 
+                            description: 'Research, analysis, and problem-solving', 
+                            icon: '🔬', 
+                            color: '#2563eb',
+                            lightColor: 'bg-blue-50',
+                            category: 'Thinkers'
+                          },
+                          'A': { 
+                            name: 'Artistic', 
+                            description: 'Creative and expressive activities', 
+                            icon: '🎨', 
+                            color: '#9333ea',
+                            lightColor: 'bg-purple-50',
+                            category: 'Creators'
+                          },
+                          'S': { 
+                            name: 'Social', 
+                            description: 'Helping, teaching, and serving others', 
+                            icon: '👥', 
+                            color: '#059669',
+                            lightColor: 'bg-emerald-50',
+                            category: 'Helpers'
+                          },
+                          'E': { 
+                            name: 'Enterprising', 
+                            description: 'Leadership, business, and persuasion', 
+                            icon: '💼', 
+                            color: '#d97706',
+                            lightColor: 'bg-amber-50',
+                            category: 'Persuaders'
+                          },
+                          'C': { 
+                            name: 'Conventional', 
+                            description: 'Organized, systematic, and detailed work', 
+                            icon: '📊', 
+                            color: '#7c3aed',
+                            lightColor: 'bg-violet-50',
+                            category: 'Organizers'
+                          }
+                        };
+                        const interest = interests[code as keyof typeof interests];
+                        
+                        // Get percentage from detailed scoring data
+                        const getRealRIASECPercentage = (code: string) => {
+                          if (results.detailedScoring?.riasecScores) {
+                            const scoreData = results.detailedScoring.riasecScores[code];
+                            if (scoreData) {
+                              return Math.round(scoreData.percentage);
+                            }
+                          }
+                          return 0;
+                        };
+                        
+                        const percentage = getRealRIASECPercentage(code);
+                        const rank = index + 1;
+                        
+                        return (
+                          <div key={index} className={`relative ${interest.lightColor} border-2 ring-2 ring-opacity-20 shadow-lg rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-6 transition-all duration-300 transform hover:scale-[1.02]`} 
+                               style={{
+                                 borderColor: interest.color,
+                                 '--ring-color': interest.color
+                               } as React.CSSProperties}>
+                            {/* Rank Badge */}
+                            <div className="absolute -top-2 md:-top-3 -left-2 md:-left-3">
+                              <div className="bg-yellow-400 text-yellow-900 text-xs md:text-sm font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-full shadow-md">
+                                #{rank}
                               </div>
                             </div>
+                            
+                            <div className="flex items-center justify-between mb-2 md:mb-3 lg:mb-4">
+                              <div className="flex items-center space-x-2 md:space-x-3 lg:space-x-4">
+                                <div className="text-2xl md:text-3xl lg:text-4xl">{interest.icon}</div>
+                                <div>
+                                  <div className="flex items-center space-x-1 md:space-x-2 mb-0.5 md:mb-1">
+                                    <h4 className={`${localGeorama.className} font-bold text-base md:text-lg lg:text-xl text-[#002A3C]`}>
+                                      {interest.name}
+                                    </h4>
+                                    <span className="px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-bold text-white" 
+                                          style={{ backgroundColor: interest.color }}>
+                                      {code}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs md:text-sm text-gray-600 font-medium">{interest.category}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xl md:text-2xl lg:text-3xl font-bold text-[#002A3C]">
+                                  {percentage}%
+                                </div>
+                                <div className="text-xs md:text-sm text-gray-500">Interest Level</div>
+                              </div>
+                            </div>
+                            
+                            <p className={`${localGeorgia.className} text-gray-700 mb-2 md:mb-3 lg:mb-4 text-sm md:text-base`}>
+                              {interest.description}
+                            </p>
+                            
+                            {/* Progress Bar */}
+                            <div className="w-full bg-gray-200 rounded-full h-2 md:h-2.5 lg:h-3 overflow-hidden">
+                              <div 
+                                className="h-2 md:h-2.5 lg:h-3 rounded-full transition-all duration-1500 ease-out shadow-md"
+                                style={{
+                                  width: `${percentage}%`,
+                                  backgroundColor: interest.color,
+                                  boxShadow: `0 0 15px ${interest.color}40`
+                                }}
+                              ></div>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                  
+                  {/* Complete RIASEC Breakdown */}
+                  <div>
+                    <div className="text-center mb-3 md:mb-4 lg:mb-6">
+                      <h4 className={`${localGeorama.className} text-lg md:text-xl font-bold text-[#002A3C] mb-1 md:mb-2`}>
+                        Complete Interest Profile
+                      </h4>
+                      <div className="w-16 md:w-18 lg:w-20 h-0.5 md:h-1 bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full mx-auto"></div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 lg:gap-4">
+                      {Object.entries({
+                        'R': { 
+                          name: 'Realistic', 
+                          description: 'Hands-on work', 
+                          icon: '🔧', 
+                          color: '#dc2626',
+                          category: 'Doers'
+                        },
+                        'I': { 
+                          name: 'Investigative', 
+                          description: 'Research & analysis', 
+                          icon: '🔬', 
+                          color: '#2563eb',
+                          category: 'Thinkers'
+                        },
+                        'A': { 
+                          name: 'Artistic', 
+                          description: 'Creative expression', 
+                          icon: '🎨', 
+                          color: '#9333ea',
+                          category: 'Creators'
+                        },
+                        'S': { 
+                          name: 'Social', 
+                          description: 'Helping others', 
+                          icon: '👥', 
+                          color: '#059669',
+                          category: 'Helpers'
+                        },
+                        'E': { 
+                          name: 'Enterprising', 
+                          description: 'Leadership & business', 
+                          icon: '💼', 
+                          color: '#d97706',
+                          category: 'Persuaders'
+                        },
+                        'C': { 
+                          name: 'Conventional', 
+                          description: 'Organized work', 
+                          icon: '📊', 
+                          color: '#7c3aed',
+                          category: 'Organizers'
+                        }
+                      }).map(([code, interest]) => {
+                        const getRealRIASECPercentage = (code: string) => {
+                          if (results.detailedScoring?.riasecScores) {
+                            const scoreData = results.detailedScoring.riasecScores[code];
+                            if (scoreData) {
+                              return Math.round(scoreData.percentage);
+                            }
+                          }
+                          return 0;
+                        };
+                        
+                        const percentage = getRealRIASECPercentage(code);
+                        const isTopInterest = results.riasecCode.includes(code);
+                        
+                        return (
+                          <div key={code} className={`bg-white rounded-lg md:rounded-xl p-2 md:p-3 lg:p-3 shadow-md transition-all duration-300 overflow-hidden ${
+                            isTopInterest ? 'ring-2 ring-opacity-50 shadow-lg' : 'hover:shadow-lg'
+                          }`} style={{
+                            '--ring-color': isTopInterest ? interest.color : undefined
+                          } as React.CSSProperties}>
+                            {/* Header Section */}
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center space-x-1.5 flex-1 min-w-0">
+                                <div className="text-sm lg:text-base flex-shrink-0">{interest.icon}</div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center space-x-1 mb-0.5">
+                                    <span className={`font-bold text-xs ${isTopInterest ? 'text-[#002A3C]' : 'text-gray-600'} truncate`}>
+                                      {interest.name}
+                                    </span>
+                                    <span className="px-1 py-0.5 rounded-full text-xs font-bold text-white flex-shrink-0" 
+                                          style={{ backgroundColor: interest.color }}>
+                                      {code}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate">{interest.category}</div>
+                                </div>
+                              </div>
+                              <div className="text-right flex-shrink-0 ml-1">
+                                <div className={`text-xs font-bold ${isTopInterest ? 'text-[#002A3C]' : 'text-gray-500'}`}>
+                                  {percentage}%
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Description Section */}
+                            <div className="mb-1">
+                              <p className="text-xs text-gray-600 leading-tight line-clamp-1">{interest.description}</p>
+                            </div>
+                            
+                            {/* Progress Bar Section */}
+                            <div className="mb-1">
+                              <div className="w-full bg-gray-200 rounded-full h-1">
+                                <div 
+                                  className={`h-1 rounded-full transition-all duration-1000 ease-out ${
+                                    isTopInterest ? 'shadow-md' : 'opacity-60'
+                                  }`}
+                                  style={{
+                                    width: `${percentage}%`,
+                                    backgroundColor: interest.color
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                            
+                            {/* Top Interest Badge */}
+                            {isTopInterest && (
+                              <div className="text-center">
+                                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                                  TOP INTEREST
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -552,21 +1046,21 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                       <div className="text-4xl mb-4">🧠</div>
                       <h4 className={`${localGeorama.className} font-bold text-xl mb-3`}>Cognitive Style</h4>
                       <p className={`${localGeorgia.className} text-base opacity-90`}>
-                        {results.mbtiType.includes('N') ? 'Intuitive & Abstract' : 'Sensing & Practical'}
+                        {actualMbtiType.includes('N') ? 'Intuitive & Abstract' : 'Sensing & Practical'}
                       </p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
                       <div className="text-4xl mb-4">⚡</div>
                       <h4 className={`${localGeorama.className} font-bold text-xl mb-3`}>Energy Source</h4>
                       <p className={`${localGeorgia.className} text-base opacity-90`}>
-                        {results.mbtiType.includes('E') ? 'External & Social' : 'Internal & Reflective'}
+                        {actualMbtiType.includes('E') ? 'External & Social' : 'Internal & Reflective'}
                       </p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
                       <div className="text-4xl mb-4">🎯</div>
                       <h4 className={`${localGeorama.className} font-bold text-xl mb-3`}>Decision Making</h4>
                       <p className={`${localGeorgia.className} text-base opacity-90`}>
-                        {results.mbtiType.includes('T') ? 'Logical & Objective' : 'Values & Empathetic'}
+                        {actualMbtiType.includes('T') ? 'Logical & Objective' : 'Values & Empathetic'}
                       </p>
                     </div>
                   </div>
@@ -585,7 +1079,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                     Your Personalized Course Recommendations
                   </h3>
                   <p className={`${localGeorgia.className} text-xl text-[#666] max-w-3xl mx-auto leading-relaxed`}>
-                    Carefully curated based on your <span className="font-bold text-[#004E70]">{results.mbtiType}</span> personality type and <span className="font-bold text-[#004E70]">{results.riasecCode}</span> career interests
+                    Carefully curated based on your <span className="font-bold text-[#004E70]">{actualMbtiType}</span> personality type and <span className="font-bold text-[#004E70]">{results.riasecCode}</span> career interests
                   </p>
                 </div>
 
@@ -790,7 +1284,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                 <div className="flex flex-col items-center">
                                   <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mb-2 shadow-lg">
                                     <span className={`${localGeorama.className} text-white text-xl font-bold`}>
-                                      {Math.round(course.matchScore * 100)}%
+                                      {Math.round(course.matchScore * 10)/10}
                                     </span>
                                   </div>
                                   <span className={`${localGeorama.className} text-sm font-semibold text-green-600`}>
@@ -898,35 +1392,226 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                   </div>
                   
                   <div className="space-y-8">
-                    {/* MBTI Dimensions */}
+                    {/* MBTI Dimensions - Unique Detailed Analysis Design */}
                     <div>
-                      <h5 className={`${localGeorama.className} font-bold text-[#002A3C] mb-6 text-xl`}>
-                        MBTI Dimensions: {results.mbtiType}
-                      </h5>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {results.mbtiType.split('').map((letter, index) => {
-                          const dimensions = [
-                            { E: 'Extraversion', I: 'Introversion', desc: 'Energy Source' },
-                            { S: 'Sensing', N: 'Intuition', desc: 'Information Processing' },
-                            { T: 'Thinking', F: 'Feeling', desc: 'Decision Making' },
-                            { J: 'Judging', P: 'Perceiving', desc: 'Lifestyle Approach' }
-                          ];
-                          const dimension = dimensions[index];
-                          const fullName = dimension[letter as keyof typeof dimension];
-                          const description = dimension.desc;
+                      <div className="text-center mb-12">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl mb-4 shadow-2xl">
+                          <span className="text-white text-2xl">📊</span>
+                        </div>
+                        <h5 className={`${localGeorama.className} font-bold text-3xl text-[#002A3C] mb-3`}>
+                          MBTI Dimensions Deep Dive
+                        </h5>
+                        <p className={`${localGeorgia.className} text-[#666] text-lg max-w-2xl mx-auto`}>
+                          Comprehensive analysis of your <span className="font-bold text-purple-600">{actualMbtiType}</span> personality type across all four core dimensions
+                        </p>
+                      </div>
+                      
+                      {/* Detailed Analysis Grid */}
+                      <div className="space-y-12">
+                        {[
+                          { 
+                            pair: ['E', 'I'], 
+                            labels: ['Extraversion', 'Introversion'], 
+                            desc: 'Energy Source', 
+                            icon: '⚡',
+                            color: '#8b5cf6',
+                            bgGradient: 'from-purple-50 to-violet-100',
+                            borderColor: 'border-purple-200',
+                            descriptions: ['Outgoing, energetic, social', 'Reflective, reserved, focused'],
+                            characteristics: ['Gains energy from social interaction', 'Gains energy from quiet reflection']
+                          },
+                          { 
+                            pair: ['S', 'N'], 
+                            labels: ['Sensing', 'Intuition'], 
+                            desc: 'Information Processing', 
+                            icon: '🔍',
+                            color: '#06b6d4',
+                            bgGradient: 'from-cyan-50 to-blue-100',
+                            borderColor: 'border-cyan-200',
+                            descriptions: ['Practical, detail-oriented, concrete', 'Abstract, future-focused, innovative'],
+                            characteristics: ['Focuses on facts and details', 'Focuses on patterns and possibilities']
+                          },
+                          { 
+                            pair: ['T', 'F'], 
+                            labels: ['Thinking', 'Feeling'], 
+                            desc: 'Decision Making', 
+                            icon: '⚖️',
+                            color: '#ec4899',
+                            bgGradient: 'from-pink-50 to-rose-100',
+                            borderColor: 'border-pink-200',
+                            descriptions: ['Logical, objective, analytical', 'Empathetic, values-driven, harmonious'],
+                            characteristics: ['Makes decisions based on logic', 'Makes decisions based on values']
+                          },
+                          { 
+                            pair: ['J', 'P'], 
+                            labels: ['Judging', 'Perceiving'], 
+                            desc: 'Lifestyle Approach', 
+                            icon: '📅',
+                            color: '#f59e0b',
+                            bgGradient: 'from-amber-50 to-orange-100',
+                            borderColor: 'border-amber-200',
+                            descriptions: ['Structured, decisive, organized', 'Flexible, adaptable, spontaneous'],
+                            characteristics: ['Prefers structure and closure', 'Prefers flexibility and openness']
+                          }
+                        ].map((dimension, index) => {
+                          const mbtiLetter = actualMbtiType[index];
+                          const letterIndex = dimension.pair.indexOf(mbtiLetter);
+                          
+                          // Get percentages from detailed scoring data
+                          const getPercentages = () => {
+                            if (results.detailedScoring?.mbtiScores) {
+                              const letter1Data = results.detailedScoring.mbtiScores[dimension.pair[0]];
+                              const letter2Data = results.detailedScoring.mbtiScores[dimension.pair[1]];
+                              
+                              if (letter1Data && letter2Data) {
+                                return {
+                                  [dimension.pair[0]]: Math.round(letter1Data.percentage),
+                                  [dimension.pair[1]]: Math.round(letter2Data.percentage)
+                                };
+                              }
+                            }
+                            
+                            return {
+                              [dimension.pair[0]]: 0,
+                              [dimension.pair[1]]: 0
+                            };
+                          };
+                          
+                          const percentages = getPercentages();
+                          const dominantPercentage = Math.max(percentages[dimension.pair[0]], percentages[dimension.pair[1]]);
+                          const dominantLetter = percentages[dimension.pair[0]] > percentages[dimension.pair[1]] ? dimension.pair[0] : dimension.pair[1];
+                          const nonDominantLetter = dominantLetter === dimension.pair[0] ? dimension.pair[1] : dimension.pair[0];
+                          const nonDominantPercentage = percentages[nonDominantLetter];
 
                           return (
-                            <div key={index} className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                              <div className="text-center">
-                                <div className={`${localGeorama.className} font-bold text-[#004E70] text-3xl mb-2`}>
-                                  {letter}
+                            <div key={index} className={`bg-gradient-to-br ${dimension.bgGradient} rounded-3xl p-8 shadow-xl border ${dimension.borderColor} hover:shadow-2xl transition-all duration-500`}>
+                              {/* Dimension Header */}
+                              <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: dimension.color + '20' }}>
+                                    <span className="text-3xl">{dimension.icon}</span>
+                                  </div>
+                                  <div>
+                                    <h6 className={`${localGeorama.className} font-bold text-2xl text-[#002A3C] mb-1`}>
+                                      {dimension.desc}
+                                    </h6>
+                                    <p className={`${localGeorgia.className} text-[#666] text-lg`}>
+                                      How you process information and make decisions
+                                    </p>
+                                  </div>
                                 </div>
-                                <h6 className={`${localGeorama.className} font-bold text-[#002A3C] text-lg mb-1`}>
-                                  {fullName}
-                                </h6>
-                                <p className={`${localGeorgia.className} text-sm text-gray-600`}>
-                                  {description}
-                                </p>
+                                <div className="text-right">
+                                  <div className="text-sm text-gray-600 mb-1">Dominant Trait</div>
+                                  <div className="text-3xl font-bold text-[#002A3C]">{dominantLetter}</div>
+                                  <div className="text-lg font-semibold" style={{ color: dimension.color }}>{dominantPercentage}%</div>
+                                </div>
+                              </div>
+                              
+                              {/* Detailed Comparison Cards */}
+                              <div className="grid md:grid-cols-2 gap-6">
+                                {dimension.pair.map((letter, letterIdx) => {
+                                  const percentage = percentages[letter];
+                                  const isDominant = letter === dominantLetter;
+                                  const label = dimension.labels[letterIdx];
+                                  const description = dimension.descriptions[letterIdx];
+                                  const characteristic = dimension.characteristics[letterIdx];
+                                  
+                                  return (
+                                    <div key={letter} className={`relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 ${
+                                      isDominant ? 'ring-2 ring-opacity-50 transform scale-105' : 'opacity-90'
+                                    }`} style={{
+                                      '--ring-color': isDominant ? dimension.color : undefined
+                                    } as React.CSSProperties}>
+                                      
+                                      {/* Dominant Indicator */}
+                                      {isDominant && (
+                                        <div className="absolute -top-3 -right-3">
+                                          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                                            DOMINANT
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Trait Header */}
+                                      <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-3">
+                                          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg" 
+                                               style={{ backgroundColor: dimension.color }}>
+                                            {letter}
+                                          </div>
+                                          <div>
+                                            <h6 className={`${localGeorama.className} font-bold text-xl text-[#002A3C]`}>
+                                              {label}
+                                            </h6>
+                                            <p className={`${localGeorgia.className} text-sm text-gray-600`}>
+                                              {description}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <div className="text-right">
+                                          <div className={`text-4xl font-bold ${isDominant ? 'text-[#002A3C]' : 'text-gray-500'}`}>
+                                            {percentage}%
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Detailed Progress Visualization */}
+                                      <div className="mb-4">
+                                        <div className="flex justify-between text-sm text-gray-600 mb-2">
+                                          <span>0%</span>
+                                          <span className="font-medium">Score Distribution</span>
+                                          <span>100%</span>
+                                        </div>
+                                        <div className="relative">
+                                          <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+                                            <div 
+                                              className="h-6 rounded-full transition-all duration-2000 ease-out relative"
+                                              style={{
+                                                width: `${percentage}%`,
+                                                backgroundColor: dimension.color,
+                                                boxShadow: isDominant ? `0 0 20px ${dimension.color}60` : 'none'
+                                              }}
+                                            >
+                                              <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-white font-bold text-sm drop-shadow-lg">
+                                                  {percentage}%
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Characteristic Description */}
+                                      <div className="bg-gray-50 rounded-xl p-4">
+                                        <div className="flex items-start space-x-2">
+                                          <div className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: dimension.color }}></div>
+                                          <p className={`${localGeorgia.className} text-sm text-gray-700`}>
+                                            {characteristic}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              
+                              {/* Dimension Analysis Summary */}
+                              <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h6 className={`${localGeorama.className} font-bold text-lg text-[#002A3C] mb-2`}>
+                                      Dimension Analysis
+                                    </h6>
+                                    <p className={`${localGeorgia.className} text-gray-600 text-sm`}>
+                                      You show a {dominantPercentage - nonDominantPercentage}% preference for <span className="font-bold" style={{ color: dimension.color }}>{dominantLetter}</span> over <span className="font-bold text-gray-500">{nonDominantLetter}</span>
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold text-[#002A3C]">{dominantLetter}</div>
+                                    <div className="text-sm text-gray-500">Final Choice</div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           );
@@ -934,51 +1619,306 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                       </div>
                     </div>
 
-                    {/* RIASEC Interests */}
+                    {/* RIASEC Interests - Modern Bar Chart */}
                     <div>
-                      <h5 className={`${localGeorama.className} font-bold text-[#002A3C] mb-6 text-xl`}>
-                        Career Interests: {results.riasecCode}
-                      </h5>
-                      <div className="grid grid-cols-2 gap-4">
-                        {results.riasecCode.split('').map((code, index) => {
-                          const interests = {
-                            'R': { name: 'Realistic', desc: 'Hands-on, practical work', icon: '🔧', color: 'from-red-400 to-orange-500' },
-                            'I': { name: 'Investigative', desc: 'Research and analysis', icon: '🔬', color: 'from-blue-400 to-cyan-500' },
-                            'A': { name: 'Artistic', desc: 'Creative and expressive', icon: '🎨', color: 'from-purple-400 to-pink-500' },
-                            'S': { name: 'Social', desc: 'Helping and teaching others', icon: '👥', color: 'from-green-400 to-emerald-500' },
-                            'E': { name: 'Enterprising', desc: 'Leadership and business', icon: '💼', color: 'from-yellow-400 to-orange-500' },
-                            'C': { name: 'Conventional', desc: 'Organized and detailed work', icon: '📊', color: 'from-indigo-400 to-blue-500' }
-                          };
-                          const interest = interests[code as keyof typeof interests];
-                          const strength = (3 - index) * 25; // Higher strength for earlier letters
-
-                          return (
-                            <div key={index} className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-                              <div className="text-center">
-                                <div className="text-4xl mb-3">{interest.icon}</div>
-                                <h6 className={`${localGeorama.className} font-bold text-[#002A3C] text-lg mb-2`}>
-                                  {interest.name}
-                                </h6>
-                                <p className={`${localGeorgia.className} text-sm text-gray-600 mb-4`}>
-                                  {interest.desc}
-                                </p>
-                                <div className="relative">
-                                  <div className="w-full bg-gray-200 rounded-full h-3">
-                                    <div 
-                                      className={`bg-gradient-to-r ${interest.color} h-3 rounded-full transition-all duration-1000 ease-out`}
-                                      style={{width: `${strength}%`}}
-                                    ></div>
+                      <div className="text-center mb-4 md:mb-6 lg:mb-8">
+                        <h5 className={`${localGeorama.className} font-bold text-[#002A3C] mb-3 md:mb-4 text-xl md:text-2xl lg:text-3xl`}>
+                          Your Career Interest Profile
+                        </h5>
+                        <div className="inline-flex items-center justify-center px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-lg">
+                          <span className={`${localGeorama.className} font-bold text-sm md:text-base lg:text-lg`}>
+                            Top Interests: {(() => {
+                              // Calculate correct RIASEC code based on actual percentages
+                              if (results.detailedScoring?.riasecScores) {
+                                const codes = ['R', 'I', 'A', 'S', 'E', 'C'];
+                                const sortedCodes = codes.sort((a, b) => {
+                                  const aPercentage = results.detailedScoring?.riasecScores[a]?.percentage || 0;
+                                  const bPercentage = results.detailedScoring?.riasecScores[b]?.percentage || 0;
+                                  return bPercentage - aPercentage;
+                                });
+                                // Return top 2 codes
+                                return sortedCodes.slice(0, 2).join('');
+                              }
+                              // Fallback to backend value if no detailed scoring
+                              return results.riasecCode;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white rounded-2xl p-4 md:p-6 lg:p-8 shadow-xl border border-gray-100 mx-1 md:mx-0">
+                        {/* Modern Vertical Bar Chart Visualization */}
+                        <div className="space-y-4 md:space-y-6 lg:space-y-8">
+                          {/* Chart Container */}
+                          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-3 md:p-4 lg:p-6 border border-gray-100">
+                            <div className="flex items-end justify-center space-x-2 md:space-x-4 lg:space-x-6 relative" style={{ height: '400px' }}>
+                              {/* Y-axis Grid Lines - Fixed positioning for perfect alignment */}
+                              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none" style={{ paddingBottom: '0px' }}>
+                                {[100, 75, 50, 25, 0].map((value, index) => (
+                                  <div key={value} className="flex items-center relative" style={{ 
+                                    top: value === 0 ? '-1px' : '0px',
+                                    height: '1px'
+                                  }}>
+                                    <div className="w-full border-t border-dashed border-gray-400 opacity-70"></div>
+                                    <div className="absolute right-0 text-xs text-gray-600 font-semibold bg-white px-2 py-1 rounded shadow-sm border border-gray-200" style={{
+                                      transform: 'translateX(100%)',
+                                      marginLeft: '8px'
+                                    }}>
+                                      {value}%
+                                    </div>
                                   </div>
-                                  <div className="flex justify-between text-xs text-gray-500 mt-2">
-                                    <span>Low</span>
-                                    <span className="font-bold">{strength}%</span>
-                                    <span>High</span>
-                                  </div>
-                                </div>
+                                ))}
                               </div>
+                              
+                              {(() => {
+                                const interests = {
+                                  'R': { name: 'Realistic', desc: 'Hands-on, practical work', icon: '🔧', color: '#ef4444', shortName: 'R' },
+                                  'I': { name: 'Investigative', desc: 'Research and analysis', icon: '🔬', color: '#3b82f6', shortName: 'I' },
+                                  'A': { name: 'Artistic', desc: 'Creative and expressive', icon: '🎨', color: '#8b5cf6', shortName: 'A' },
+                                  'S': { name: 'Social', desc: 'Helping and teaching others', icon: '👥', color: '#10b981', shortName: 'S' },
+                                  'E': { name: 'Enterprising', desc: 'Leadership and business', icon: '💼', color: '#f59e0b', shortName: 'E' },
+                                  'C': { name: 'Conventional', desc: 'Organized and detailed work', icon: '📊', color: '#6366f1', shortName: 'C' }
+                                };
+                                
+                                // Get percentages
+                                const getPercentages = () => {
+                                  if (results.detailedScoring?.riasecScores) {
+                                    const percentages: { [key: string]: number } = {};
+                                    ['R', 'I', 'A', 'S', 'E', 'C'].forEach(code => {
+                                      const data = results.detailedScoring?.riasecScores[code];
+                                      if (data) {
+                                        percentages[code] = Math.round(data.percentage);
+                                      }
+                                    });
+                                    return percentages;
+                                  }
+                                  
+                                  // Fallback
+                                  return {
+                                    'R': 17, 'I': 17, 'A': 17, 'S': 17, 'E': 16, 'C': 16
+                                  };
+                                };
+                                
+                                const percentages = getPercentages();
+                                
+                                return ['R', 'I', 'A', 'S', 'E', 'C'].map((code, index) => {
+                                  const interest = interests[code as keyof typeof interests];
+                                  const percentage = percentages[code] || 0;
+                                  
+                                  // Calculate correct top interests based on actual percentages
+                                  const getCorrectTopInterests = () => {
+                                    if (results.detailedScoring?.riasecScores) {
+                                      const codes = ['R', 'I', 'A', 'S', 'E', 'C'];
+                                      const sortedCodes = codes.sort((a, b) => {
+                                        const aPercentage = results.detailedScoring?.riasecScores[a]?.percentage || 0;
+                                        const bPercentage = results.detailedScoring?.riasecScores[b]?.percentage || 0;
+                                        return bPercentage - aPercentage;
+                                      });
+                                      return sortedCodes.slice(0, 2).join('');
+                                    }
+                                    return results.riasecCode;
+                                  };
+                                  
+                                  const correctTopInterests = getCorrectTopInterests();
+                                  const isTopInterest = correctTopInterests.includes(code);
+                                  const rank = ['R', 'I', 'A', 'S', 'E', 'C'].sort((a, b) => (percentages[b] || 0) - (percentages[a] || 0)).indexOf(code) + 1;
+                                  
+                                  return (
+                                    <div key={code} className="flex flex-col items-center group relative">
+                                      {/* Bar Container */}
+                                      <div className="relative flex flex-col items-center mb-4">
+                                        {/* Percentage Label on Top - White badge with colored border */}
+                                        <div 
+                                          className="mb-1 md:mb-2 px-2 md:px-3 py-0.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-white shadow-sm"
+                                          style={{
+                                            border: `2px solid ${interest.color}`,
+                                            color: interest.color
+                                          }}
+                                        >
+                                          {percentage}%
+                                        </div>
+                                        
+                                        {/* Vertical Bar - Fixed height calculation for perfect grid alignment */}
+                                        <div 
+                                          className={`relative transition-all duration-2000 ease-out group-hover:scale-105 w-12 md:w-14 lg:w-18 ${
+                                            isTopInterest ? 'drop-shadow-lg' : ''
+                                          }`}
+                                          style={{
+                                            height: `${(percentage / 100) * 400}px`, // Matches container height of 400px
+                                            background: isTopInterest 
+                                              ? `linear-gradient(180deg, ${interest.color}, ${interest.color}CC)` 
+                                              : `linear-gradient(180deg, ${interest.color}80, ${interest.color}60)`,
+                                            borderRadius: '8px 8px 0 0',
+                                            boxShadow: isTopInterest ? `0 8px 24px ${interest.color}40` : `0 4px 16px ${interest.color}20`,
+                                            minHeight: '4px' // Ensure even 0% values are visible
+                                          }}
+                                        >
+                                          {/* Shimmer effect for top interests */}
+                                          {isTopInterest && (
+                                            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white to-transparent opacity-30 animate-pulse rounded-t-lg"></div>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Rank Badge for top interests - improved positioning */}
+                                        {isTopInterest && rank <= 2 && (
+                                          <div className="absolute -top-2 md:-top-3 -left-2 md:-left-3 w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                            <span className="text-white font-bold text-xs md:text-sm">
+                                              {rank}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* X-axis Label - Removed for cleaner look */}
+                                      
+                                      {/* Enhanced Hover Tooltip */}
+                                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-20 scale-95 group-hover:scale-100">
+                                        <div className="bg-gray-900 text-white text-sm rounded-xl px-4 py-3 whitespace-nowrap shadow-2xl border border-gray-700">
+                                          <div className="font-bold text-white mb-1">{interest.name}</div>
+                                          <div className="text-gray-300 text-xs mb-1">{interest.desc}</div>
+                                          <div className="text-yellow-300 font-bold text-sm">{percentage}% Interest</div>
+                                          {isTopInterest && (
+                                            <div className="text-blue-300 text-xs font-semibold mt-1">★ Primary Interest</div>
+                                          )}
+                                        </div>
+                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
                             </div>
-                          );
-                        })}
+                            
+                            {/* Chart Title Below */}
+                            <div className="text-center mt-3 md:mt-4 lg:mt-6">
+                              <h6 className={`${localGeorama.className} text-sm md:text-base lg:text-lg font-bold text-[#002A3C]`}>
+                                RIASEC Career Interest Assessment
+                              </h6>
+                            </div>
+                          </div>
+                          
+                          {/* Legend with Detailed Info - Fixed for desktop layout */}
+                          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
+                            {(() => {
+                              const interests = {
+                                'R': { name: 'Realistic', desc: 'Hands-on, practical work', icon: '🔧', color: '#ef4444' },
+                                'I': { name: 'Investigative', desc: 'Research and analysis', icon: '🔬', color: '#3b82f6' },
+                                'A': { name: 'Artistic', desc: 'Creative and expressive', icon: '🎨', color: '#8b5cf6' },
+                                'S': { name: 'Social', desc: 'Helping and teaching others', icon: '👥', color: '#10b981' },
+                                'E': { name: 'Enterprising', desc: 'Leadership and business', icon: '💼', color: '#f59e0b' },
+                                'C': { name: 'Conventional', desc: 'Organized and detailed work', icon: '📊', color: '#6366f1' }
+                              };
+                              
+                              const getPercentages = () => {
+                                if (results.detailedScoring?.riasecScores) {
+                                  const percentages: { [key: string]: number } = {};
+                                  ['R', 'I', 'A', 'S', 'E', 'C'].forEach(code => {
+                                    const data = results.detailedScoring?.riasecScores[code];
+                                    if (data) {
+                                      percentages[code] = Math.round(data.percentage);
+                                    }
+                                  });
+                                  return percentages;
+                                }
+                                return { 'R': 17, 'I': 17, 'A': 17, 'S': 17, 'E': 16, 'C': 16 };
+                              };
+                              
+                              const percentages = getPercentages();
+                              
+                              return ['R', 'I', 'A', 'S', 'E', 'C'].map((code) => {
+                                const interest = interests[code as keyof typeof interests];
+                                const percentage = percentages[code] || 0;
+                                
+                                // Calculate correct top interests based on actual percentages
+                                const getCorrectTopInterests = () => {
+                                  if (results.detailedScoring?.riasecScores) {
+                                    const codes = ['R', 'I', 'A', 'S', 'E', 'C'];
+                                    const sortedCodes = codes.sort((a, b) => {
+                                      const aPercentage = results.detailedScoring?.riasecScores[a]?.percentage || 0;
+                                      const bPercentage = results.detailedScoring?.riasecScores[b]?.percentage || 0;
+                                      return bPercentage - aPercentage;
+                                    });
+                                    return sortedCodes.slice(0, 2).join('');
+                                  }
+                                  return results.riasecCode;
+                                };
+                                
+                                const correctTopInterests = getCorrectTopInterests();
+                                const isTopInterest = correctTopInterests.includes(code);
+                                
+                                return (
+                                  <div key={code} className={`p-3 md:p-4 lg:p-5 xl:p-4 rounded-lg md:rounded-xl border-2 transition-all duration-300 min-h-[120px] md:min-h-[130px] lg:min-h-[140px] xl:min-h-[120px] ${
+                                    isTopInterest 
+                                      ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300 shadow-lg transform scale-105' 
+                                      : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                  }`}>
+                                    <div className="flex flex-col items-center text-center h-full justify-between">
+                                      {/* Icon and Name Section */}
+                                      <div className="flex flex-col items-center space-y-2">
+                                        <span className="text-2xl md:text-3xl lg:text-4xl xl:text-2xl">{interest.icon}</span>
+                                        <div className="space-y-1">
+                                          <div className={`text-sm md:text-base lg:text-lg xl:text-sm font-bold leading-tight ${isTopInterest ? 'text-[#002A3C]' : 'text-gray-700'}`}>
+                                            {interest.name}
+                                          </div>
+                                          <div className={`text-xs md:text-sm lg:text-base xl:text-xs leading-tight ${isTopInterest ? 'text-blue-600' : 'text-gray-500'}`}>
+                                            {interest.desc}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Percentage Section */}
+                                      <div className="mt-auto">
+                                        <div className={`text-lg md:text-xl lg:text-2xl xl:text-lg font-bold ${isTopInterest ? 'text-blue-600' : 'text-gray-600'}`}>
+                                          {percentage}%
+                                        </div>
+                                        {isTopInterest && (
+                                          <div className="text-xs font-semibold text-blue-500 mt-1">
+                                            TOP INTEREST
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                        </div>
+                        
+                        {/* Summary Stats */}
+                        <div className="mt-8 pt-6 border-t border-gray-200">
+                          <div className="grid md:grid-cols-3 gap-6">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-[#002A3C] mb-1">
+                                {(() => {
+                                  const percentages = results.detailedScoring?.riasecScores ? 
+                                    Object.values(results.detailedScoring.riasecScores).map(s => s.percentage) : 
+                                    [17, 17, 17, 17, 16, 16];
+                                  return Math.round(percentages.reduce((a, b) => a + b, 0) / percentages.length);
+                                })()}%
+                              </div>
+                              <div className="text-sm text-gray-600">Average Interest</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-[#002A3C] mb-1">
+                                {results.riasecCode.length}
+                              </div>
+                              <div className="text-sm text-gray-600">Primary Interests</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-[#002A3C] mb-1">
+                                {(() => {
+                                  const percentages = results.detailedScoring?.riasecScores ? 
+                                    Object.values(results.detailedScoring.riasecScores).map(s => s.percentage) : 
+                                    [17, 17, 17, 17, 16, 16];
+                                  const max = Math.max(...percentages);
+                                  return max;
+                                })()}%
+                              </div>
+                              <div className="text-sm text-gray-600">Highest Interest</div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1000,13 +1940,59 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                         {(() => {
                           try {
                             const goals = JSON.parse(results.studentGoals);
-                            return Object.entries(goals).map(([key, value]) => (
+                            // Filter out demographic fields that shouldn't be displayed
+                            const filteredGoals = Object.entries(goals).filter(([key]) => 
+                              !['age', 'gender', 'isFromPLMar'].includes(key)
+                            );
+                            
+                            if (filteredGoals.length === 0) {
+                              return (
+                                <p className={`${localGeorgia.className} text-gray-600 text-center py-8`}>
+                                  Goal information not available
+                                </p>
+                              );
+                            }
+                            
+                            // Function to provide better descriptions for goal values
+                            const getDisplayValue = (key: string, value: string) => {
+                              if (key === 'routine') {
+                                switch (value) {
+                                  case 'Structured – I like plans and clear instructions':
+                                    return 'Prefers structured plans and clear instructions';
+                                  case 'Flexible – I prefer freedom to explore and change':
+                                    return 'Prefers flexible freedom to explore and change';
+                                  case 'Somewhere in between':
+                                    return 'Can adapt to both structured and flexible approaches';
+                                  default:
+                                    return value;
+                                }
+                              } else if (key === 'confidence') {
+                                const level = parseInt(value);
+                                switch (level) {
+                                  case 1:
+                                    return 'Level 1 - Very uncertain about career path';
+                                  case 2:
+                                    return 'Level 2 - Somewhat uncertain about career path';
+                                  case 3:
+                                    return 'Level 3 - Moderately confident in career path';
+                                  case 4:
+                                    return 'Level 4 - Quite confident in career path';
+                                  case 5:
+                                    return 'Level 5 - Very confident in career path';
+                                  default:
+                                    return `Level ${level}`;
+                                }
+                              }
+                              return value;
+                            };
+                            
+                            return filteredGoals.map(([key, value]) => (
                               <div key={key} className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border-l-4 border-yellow-400">
                                 <span className={`${localGeorama.className} font-bold text-[#002A3C] capitalize`}>
                                   {key.replace(/([A-Z])/g, ' $1').trim()}:
                                 </span>
                                 <span className={`${localGeorgia.className} text-[#666] font-medium`}>
-                                  {String(value)}
+                                  {getDisplayValue(key, String(value))}
                                 </span>
                               </div>
                             ));
@@ -1060,7 +2046,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                     Detailed MBTI Analysis
                   </h3>
                   <p className={`${localGeorgia.className} text-xl text-[#666] max-w-3xl mx-auto leading-relaxed`}>
-                    In-depth insights into your {results.mbtiType} personality type, learning preferences, and growth opportunities.
+                    In-depth insights into your {actualMbtiType} personality type, learning preferences, and growth opportunities.
                   </p>
                 </div>
 
@@ -1250,7 +2236,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                       </div>
                       <p className={`${localGeorgia.className} text-[#666] leading-relaxed`}>
                         This detailed information is based on comprehensive MBTI research 
-                        and provides personalized insights for your <span className="font-bold text-[#004E70]">{results.mbtiType}</span> personality type.
+                        and provides personalized insights for your <span className="font-bold text-[#004E70]">{actualMbtiType}</span> personality type.
                       </p>
                     </div>
                   </div>
