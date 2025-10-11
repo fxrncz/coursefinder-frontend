@@ -277,6 +277,8 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ userData, onUserDataU
 
   // Handle unsaved changes dialog
   const handleUnsavedDialogConfirm = () => {
+    // Reset form data to original values when user chooses to leave without saving
+    setFormData(originalData);
     setShowUnsavedDialog(false);
     if (pendingNavigation) {
       setActiveTab(pendingNavigation);
