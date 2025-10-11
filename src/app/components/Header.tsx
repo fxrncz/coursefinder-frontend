@@ -462,8 +462,10 @@ const Header: React.FC<HeaderProps> = ({ forceWhite = false }) => {
               <div className="hidden sm:flex items-center justify-center w-full">
                 <div className="flex items-center justify-center gap-8 sm:gap-12 md:gap-16 lg:gap-20 xl:gap-24">
                   <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-                    <Image src="/togahat.png" alt="CourseFinder Logo" width={50} height={50} className="sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-[70px] lg:h-[70px]" />
-                    <span className={`${localGotham.className} text-[#A75F00] font-semibold text-lg sm:text-xl md:text-2xl tracking-wide`}>COURSEFINDER</span>
+                    <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                      <Image src="/togahat.png" alt="CourseFinder Logo" width={50} height={50} className="sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-[70px] lg:h-[70px]" />
+                      <span className={`${localGotham.className} text-[#A75F00] font-semibold text-lg sm:text-xl md:text-2xl tracking-wide`}>COURSEFINDER</span>
+                    </Link>
                   </div>
                   <nav className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 text-sm sm:text-base">
                     <Link href="/" onClick={(e)=>{ if(isOnTestPage && hasTestProgress()){ e.preventDefault(); setPendingHref('/'); setShowLeaveDialog(true);} }} className={`${localGeorama.className} ${isActive('/') ? 'font-bold' : 'font-normal'} text-[#4d2c00] no-underline relative group`}>
