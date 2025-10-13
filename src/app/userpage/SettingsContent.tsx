@@ -136,11 +136,23 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ userData, onUserDataU
     }
 
     // Validate password length if provided
-    if (formData.newPassword && formData.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters long' });
+    if (formData.newPassword && formData.newPassword.length < 8) {
+      setMessage({ type: 'error', text: 'Password must be at least 8 characters long' });
       return;
     }
-
+    
+    // Validate password contains letters
+    if (formData.newPassword && !/[a-zA-Z]/.test(formData.newPassword)) {
+      setMessage({ type: 'error', text: 'Password must contain at least one letter' });
+      return;
+    }
+    
+    // Validate password contains numbers
+    if (formData.newPassword && !/[0-9]/.test(formData.newPassword)) {
+      setMessage({ type: 'error', text: 'Password must contain at least one number' });
+      return;
+    }
+ 
     setIsLoading(true);
     setMessage(null);
 

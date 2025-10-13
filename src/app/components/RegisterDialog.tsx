@@ -69,8 +69,16 @@ const RegisterDialog: React.FC<RegisterDialogProps> = ({ triggerText, className,
       setError("Please enter a valid email address");
       return false;
     }
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return false;
+    }
+    if (!/[a-zA-Z]/.test(formData.password)) {
+      setError("Password must contain at least one letter");
+      return false;
+    }
+    if (!/[0-9]/.test(formData.password)) {
+      setError("Password must contain at least one number");
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
