@@ -236,12 +236,12 @@ export default function AdminDashboard() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value}`}
+                  label={(entry: any) => `${entry.name}: ${entry.value}`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {plmarData.map((entry, index) => (
+                  {plmarData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -325,12 +325,12 @@ export default function AdminDashboard() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.count}`}
+                  label={(entry: any) => `${entry.name}: ${entry.count}`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {genderChartData.map((entry, index) => (
+                  {genderChartData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
                   ))}
                 </Pie>
