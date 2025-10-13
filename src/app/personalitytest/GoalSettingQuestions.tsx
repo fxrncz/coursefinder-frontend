@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { localGeorama, localGeorgia } from '../fonts';
+import { localGeorama, localGeorgia, localGotham } from '../fonts';
 import { apiUrl } from '../../lib/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 
 interface GoalSettingAnswers {
   priority: string;
@@ -41,6 +49,8 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
   const [hasAnsweredPLMar, setHasAnsweredPLMar] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Use ref to track the latest answers for immediate saving
   const answersRef = useRef(answers);
@@ -589,10 +599,40 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
               </div>
             </div>
 
+            {/* Terms of Use Agreement */}
+            <div className="pt-6 pb-4">
+              <div className="flex items-start space-x-3 max-w-2xl mx-auto">
+                <input
+                  type="checkbox"
+                  id="terms-agreement"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-[#002A3C] border-gray-300 rounded focus:ring-[#002A3C] cursor-pointer"
+                />
+                <label
+                  htmlFor="terms-agreement"
+                  className={`${localGeorgia.className} text-[#002A3C] text-sm`}
+                >
+                  I agree to the{' '}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowTermsModal(true);
+                    }}
+                    className="text-[#A75F00] underline hover:text-[#8B4F00] cursor-pointer font-medium"
+                  >
+                    Terms of Use
+                  </button>
+                  {' '}and acknowledge that my responses will be used to generate personalized course and career recommendations.
+                </label>
+              </div>
+            </div>
+
             {/* Submit Button */}
-            <div className="text-center pt-8">
+            <div className="text-center pt-4">
               <button
-                disabled={isSubmitting}
+                disabled={isSubmitting || !agreedToTerms}
                 className={`${localGeorama.className} bg-[#002A3C] text-white px-8 py-3 font-semibold hover:bg-[#004E70] transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                 onClick={async () => {
                   // Validate all required questions are answered
@@ -714,6 +754,61 @@ const GoalSettingQuestions: React.FC<GoalSettingQuestionsProps> = ({ onComplete,
           </div>
         </div>
       )}
+
+      {/* Terms of Use Modal */}
+      <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className={`${localGotham.className} text-[#A75F00] text-xl`}>
+              Terms of Use
+            </DialogTitle>
+            <DialogDescription className={`${localGeorama.className} text-[#294556]`}>
+              Please read and acknowledge our terms of data usage
+            </DialogDescription>
+          </DialogHeader>
+          <div className={`${localGeorama.className} text-sm text-[#294556] space-y-4`}>
+            <div>
+              <h3 className="font-semibold text-[#A75F00] mb-2">Data Collection and Usage</h3>
+              <p>
+                By using CourseFinder, you acknowledge and agree that we collect and use your personal information, 
+                including but not limited to your personality test responses, course preferences, and demographic data, 
+                to provide personalized course and career recommendations.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-[#A75F00] mb-2">Purpose of Data Collection</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>To analyze your personality traits and learning preferences</li>
+                <li>To recommend suitable academic courses and career paths</li>
+                <li>To improve our recommendation algorithms and services</li>
+                <li>To provide personalized user experiences</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-[#A75F00] mb-2">User Consent</h3>
+              <p>
+                Your continued use of our platform constitutes your explicit consent to our data collection 
+                and processing practices as outlined in these terms and our Privacy Policy.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-[#A75F00] mb-2">Academic Use</h3>
+              <p>
+                This platform is developed as part of a Capstone 2 Project at STI College Cubao. 
+                Your data may be used for educational and research purposes related to this project.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => setShowTermsModal(false)}
+              className="px-6 py-2 bg-[#A75F00] text-white rounded-md hover:bg-[#8B4F00] transition-colors"
+            >
+              I Acknowledge
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
