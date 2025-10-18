@@ -1850,12 +1850,12 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                         </div>
                       </div>
                       
-                      <div className="bg-white rounded-2xl p-4 md:p-6 lg:p-8 shadow-xl border border-gray-100 mx-1 md:mx-0">
+                      <div className="bg-white rounded-2xl p-3 md:p-6 lg:p-8 shadow-xl border border-gray-100 mx-0 md:mx-1">
                         {/* Modern Vertical Bar Chart Visualization */}
-                        <div className="space-y-4 md:space-y-6 lg:space-y-8">
+                        <div className="space-y-3 md:space-y-6 lg:space-y-8">
                           {/* Chart Container */}
-                          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-3 md:p-4 lg:p-6 border border-gray-100">
-                            <div className="flex items-end justify-center space-x-2 md:space-x-4 lg:space-x-6 relative" style={{ height: '400px' }}>
+                          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-2 md:p-4 lg:p-6 border border-gray-100 overflow-hidden">
+                            <div className="flex items-end justify-center space-x-1 md:space-x-4 lg:space-x-6 relative" style={{ height: '300px' }}>
                               {/* Y-axis Grid Lines - Fixed positioning for perfect alignment */}
                               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none" style={{ paddingBottom: '0px' }}>
                                 {[100, 75, 50, 25, 0].map((value, index) => (
@@ -1864,9 +1864,9 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                     height: '1px'
                                   }}>
                                     <div className="w-full border-t border-dashed border-gray-400 opacity-70"></div>
-                                    <div className="absolute right-0 text-xs text-gray-600 font-semibold bg-white px-2 py-1 rounded shadow-sm border border-gray-200" style={{
+                                    <div className="absolute right-0 text-xs text-gray-600 font-semibold bg-white px-1 md:px-2 py-0.5 md:py-1 rounded shadow-sm border border-gray-200" style={{
                                       transform: 'translateX(100%)',
-                                      marginLeft: '8px'
+                                      marginLeft: '4px'
                                     }}>
                                       {value}%
                                     </div>
@@ -1933,7 +1933,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                       <div className="relative flex flex-col items-center mb-4">
                                         {/* Percentage Label on Top - White badge with colored border */}
                                         <div 
-                                          className="mb-1 md:mb-2 px-2 md:px-3 py-0.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-white shadow-sm"
+                                          className="mb-1 md:mb-2 px-1 md:px-3 py-0.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-white shadow-sm"
                                           style={{
                                             border: `2px solid ${interest.color}`,
                                             color: interest.color
@@ -1944,15 +1944,15 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                         
                                         {/* Vertical Bar - Fixed height calculation for perfect grid alignment */}
                                         <div 
-                                          className={`relative transition-all duration-2000 ease-out group-hover:scale-105 w-12 md:w-14 lg:w-18 ${
+                                          className={`relative transition-all duration-2000 ease-out group-hover:scale-105 w-8 md:w-14 lg:w-18 ${
                                             isTopInterest ? 'drop-shadow-lg' : ''
                                           }`}
                                           style={{
-                                            height: `${(percentage / 100) * 400}px`, // Matches container height of 400px
+                                            height: `${(percentage / 100) * 300}px`, // Matches container height of 300px
                                             background: isTopInterest 
                                               ? `linear-gradient(180deg, ${interest.color}, ${interest.color}CC)` 
                                               : `linear-gradient(180deg, ${interest.color}80, ${interest.color}60)`,
-                                            borderRadius: '8px 8px 0 0',
+                                            borderRadius: '6px 6px 0 0',
                                             boxShadow: isTopInterest ? `0 8px 24px ${interest.color}40` : `0 4px 16px ${interest.color}20`,
                                             minHeight: '4px' // Ensure even 0% values are visible
                                           }}
@@ -1965,7 +1965,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                         
                                         {/* Rank Badge for top interests - improved positioning */}
                                         {isTopInterest && rank <= 2 && (
-                                          <div className="absolute -top-2 md:-top-3 -left-2 md:-left-3 w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                          <div className="absolute -top-1 md:-top-3 -left-1 md:-left-3 w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
                                             <span className="text-white font-bold text-xs md:text-sm">
                                               {rank}
                                             </span>
@@ -1994,15 +1994,15 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                             </div>
                             
                             {/* Chart Title Below */}
-                            <div className="text-center mt-3 md:mt-4 lg:mt-6">
-                              <h6 className={`${localGeorama.className} text-sm md:text-base lg:text-lg font-bold text-[#002A3C]`}>
+                            <div className="text-center mt-2 md:mt-4 lg:mt-6">
+                              <h6 className={`${localGeorama.className} text-xs md:text-base lg:text-lg font-bold text-[#002A3C]`}>
                                 RIASEC Career Interest Assessment
                               </h6>
                             </div>
                           </div>
                           
                           {/* Legend with Detailed Info - Fixed for desktop layout */}
-                          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
+                          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 md:gap-4 lg:gap-6">
                             {(() => {
                               const interests = {
                                 'R': { name: 'Realistic', desc: 'Hands-on, practical work', icon: '🔧', color: '#ef4444' },
@@ -2051,17 +2051,17 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                 const isTopInterest = correctTopInterests.includes(code);
                                 
                                 return (
-                                  <div key={code} className={`p-3 md:p-4 lg:p-5 xl:p-4 rounded-lg md:rounded-xl border-2 transition-all duration-300 min-h-[120px] md:min-h-[130px] lg:min-h-[140px] xl:min-h-[120px] ${
+                                  <div key={code} className={`p-2 md:p-4 lg:p-5 xl:p-4 rounded-lg md:rounded-xl border-2 transition-all duration-300 min-h-[100px] md:min-h-[130px] lg:min-h-[140px] xl:min-h-[120px] ${
                                     isTopInterest 
                                       ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300 shadow-lg transform scale-105' 
                                       : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md'
                                   }`}>
                                     <div className="flex flex-col items-center text-center h-full justify-between">
                                       {/* Icon and Name Section */}
-                                      <div className="flex flex-col items-center space-y-2">
-                                        <span className="text-2xl md:text-3xl lg:text-4xl xl:text-2xl">{interest.icon}</span>
+                                      <div className="flex flex-col items-center space-y-1 md:space-y-2">
+                                        <span className="text-xl md:text-3xl lg:text-4xl xl:text-2xl">{interest.icon}</span>
                                         <div className="space-y-1">
-                                          <div className={`text-sm md:text-base lg:text-lg xl:text-sm font-bold leading-tight ${isTopInterest ? 'text-[#002A3C]' : 'text-gray-700'}`}>
+                                          <div className={`text-xs md:text-base lg:text-lg xl:text-sm font-bold leading-tight ${isTopInterest ? 'text-[#002A3C]' : 'text-gray-700'}`}>
                                             {interest.name}
                                           </div>
                                           <div className={`text-xs md:text-sm lg:text-base xl:text-xs leading-tight ${isTopInterest ? 'text-blue-600' : 'text-gray-500'}`}>
@@ -2072,7 +2072,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                       
                                       {/* Percentage Section */}
                                       <div className="mt-auto">
-                                        <div className={`text-lg md:text-xl lg:text-2xl xl:text-lg font-bold ${isTopInterest ? 'text-blue-600' : 'text-gray-600'}`}>
+                                        <div className={`text-base md:text-xl lg:text-2xl xl:text-lg font-bold ${isTopInterest ? 'text-blue-600' : 'text-gray-600'}`}>
                                           {percentage}%
                                         </div>
                                         {isTopInterest && (
