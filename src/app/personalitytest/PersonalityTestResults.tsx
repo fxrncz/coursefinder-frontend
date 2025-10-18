@@ -1855,7 +1855,25 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                         <div className="space-y-3 md:space-y-6 lg:space-y-8">
                           {/* Chart Container */}
                           <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-2 md:p-4 lg:p-6 border border-gray-100 overflow-hidden">
-                            <div className="flex items-end justify-center space-x-1 md:space-x-4 lg:space-x-6 relative" style={{ height: '300px' }}>
+                            <style jsx>{`
+                              .chart-container {
+                                height: 300px;
+                              }
+                              @media (min-width: 768px) {
+                                .chart-container {
+                                  height: 400px;
+                                }
+                              }
+                              .chart-bar {
+                                height: calc(var(--percentage) * 300px / 100);
+                              }
+                              @media (min-width: 768px) {
+                                .chart-bar {
+                                  height: calc(var(--percentage) * 400px / 100);
+                                }
+                              }
+                            `}</style>
+                            <div className="flex items-end justify-center space-x-1 md:space-x-4 lg:space-x-6 relative chart-container">
                               {/* Y-axis Grid Lines - Fixed positioning for perfect alignment */}
                               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none" style={{ paddingBottom: '0px' }}>
                                 {[100, 75, 50, 25, 0].map((value, index) => (
@@ -1931,24 +1949,13 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                     <div key={code} className="flex flex-col items-center group relative">
                                       {/* Bar Container */}
                                       <div className="relative flex flex-col items-center mb-4">
-                                        {/* Percentage Label on Top - White badge with colored border */}
-                                        <div 
-                                          className="mb-1 md:mb-2 px-1 md:px-3 py-0.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-white shadow-sm"
-                                          style={{
-                                            border: `2px solid ${interest.color}`,
-                                            color: interest.color
-                                          }}
-                                        >
-                                          {percentage}%
-                                        </div>
-                                        
                                         {/* Vertical Bar - Fixed height calculation for perfect grid alignment */}
                                         <div 
-                                          className={`relative transition-all duration-2000 ease-out group-hover:scale-105 w-8 md:w-14 lg:w-18 ${
+                                          className={`relative transition-all duration-2000 ease-out group-hover:scale-105 w-8 md:w-14 lg:w-18 chart-bar ${
                                             isTopInterest ? 'drop-shadow-lg' : ''
                                           }`}
                                           style={{
-                                            height: `${(percentage / 100) * 300}px`, // Matches container height of 300px
+                                            '--percentage': percentage,
                                             background: isTopInterest 
                                               ? `linear-gradient(180deg, ${interest.color}, ${interest.color}CC)` 
                                               : `linear-gradient(180deg, ${interest.color}80, ${interest.color}60)`,
@@ -1957,6 +1964,16 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                             minHeight: '4px' // Ensure even 0% values are visible
                                           }}
                                         >
+                                          {/* Percentage Label Inside Bar */}
+                                          <div 
+                                            className="absolute top-1 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs md:text-sm drop-shadow-lg"
+                                            style={{
+                                              textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
+                                            }}
+                                          >
+                                            {percentage}%
+                                          </div>
+                                          
                                           {/* Shimmer effect for top interests */}
                                           {isTopInterest && (
                                             <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white to-transparent opacity-30 animate-pulse rounded-t-lg"></div>
@@ -1965,7 +1982,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                         
                                         {/* Rank Badge for top interests - improved positioning */}
                                         {isTopInterest && rank <= 2 && (
-                                          <div className="absolute -top-1 md:-top-3 -left-1 md:-left-3 w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                          <div className="absolute -top-2 md:-top-3 -right-2 md:-right-3 w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
                                             <span className="text-white font-bold text-xs md:text-sm">
                                               {rank}
                                             </span>
