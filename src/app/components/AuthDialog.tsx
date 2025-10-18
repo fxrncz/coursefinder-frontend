@@ -8,7 +8,7 @@ import { Label } from "@/app/components/ui/label";
 import { localGeorama } from "../fonts";
 import { localGeorgia } from "../fonts";
 import { localGeorgiaItalic } from "../fonts";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "./ui/toast";
 import { apiUrl } from "../../lib/api";
@@ -39,6 +39,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -213,14 +214,26 @@ const AuthDialog: React.FC<AuthDialogProps> = ({
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="********"
                 required
                 value={formData.password}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`${localGeorgia.className} w-full pl-10 pr-5 py-5 text-base border border-gray-300 rounded-md focus:border-[#A75F00] focus:ring-1 focus:ring-[#A75F00] focus:outline-none transition-all duration-200`}
+                className={`${localGeorgia.className} w-full pl-10 pr-12 py-5 text-base border border-gray-300 rounded-md focus:border-[#A75F00] focus:ring-1 focus:ring-[#A75F00] focus:outline-none transition-all duration-200`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                disabled={isLoading}
+              >
+                {showPassword ? (
+                  <Eye className="w-4 h-4" />
+                ) : (
+                  <EyeOff className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
           

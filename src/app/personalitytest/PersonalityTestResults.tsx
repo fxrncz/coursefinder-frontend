@@ -1532,7 +1532,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                   </div>
                 </div>
 
-                <div className="space-y-12 sm:space-y-16">
+                <div className="space-y-8 sm:space-y-12 md:space-y-16">
 
                 {/* Modern Test Information Section */}
                 <div className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl border border-white/20 backdrop-blur-sm">
@@ -1611,7 +1611,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                       </div>
                       
                       {/* Detailed Analysis Grid */}
-                      <div className="space-y-12">
+                      <div className="space-y-8 md:space-y-12">
                         {[
                           { 
                             pair: ['E', 'I'], 
@@ -1688,31 +1688,31 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                           const nonDominantPercentage = percentages[nonDominantLetter];
 
                           return (
-                            <div key={index} className={`bg-gradient-to-br ${dimension.bgGradient} rounded-3xl p-8 shadow-xl border ${dimension.borderColor} hover:shadow-2xl transition-all duration-500`}>
+                            <div key={index} className={`bg-gradient-to-br ${dimension.bgGradient} rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-xl border ${dimension.borderColor} hover:shadow-2xl transition-all duration-500`}>
                               {/* Dimension Header */}
-                              <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center space-x-4">
-                                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: dimension.color + '20' }}>
-                                    <span className="text-3xl">{dimension.icon}</span>
+                              <div className="flex items-center justify-between mb-6 md:mb-8">
+                                <div className="flex items-center space-x-3 md:space-x-4">
+                                  <div className="w-12 h-12 md:w-16 md:h-16 bg-white rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: dimension.color + '20' }}>
+                                    <span className="text-2xl md:text-3xl">{dimension.icon}</span>
                                   </div>
                                   <div>
-                                    <h6 className={`${localGeorama.className} font-bold text-2xl text-[#002A3C] mb-1`}>
+                                    <h6 className={`${localGeorama.className} font-bold text-xl md:text-2xl text-[#002A3C] mb-1`}>
                                       {dimension.desc}
                                     </h6>
-                                    <p className={`${localGeorgia.className} text-[#666] text-lg`}>
+                                    <p className={`${localGeorgia.className} text-[#666] text-sm md:text-lg`}>
                                       How you process information and make decisions
                                     </p>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm text-gray-600 mb-1">Dominant Trait</div>
-                                  <div className="text-3xl font-bold text-[#002A3C]">{dominantLetter}</div>
-                                  <div className="text-lg font-semibold" style={{ color: dimension.color }}>{dominantPercentage}%</div>
+                                  <div className="text-xs md:text-sm text-gray-600 mb-1">Dominant Trait</div>
+                                  <div className="text-2xl md:text-3xl font-bold text-[#002A3C]">{dominantLetter}</div>
+                                  <div className="text-base md:text-lg font-semibold" style={{ color: dimension.color }}>{dominantPercentage}%</div>
                                 </div>
                               </div>
                               
                               {/* Detailed Comparison Cards */}
-                              <div className="grid md:grid-cols-2 gap-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 {dimension.pair.map((letter, letterIdx) => {
                                   const percentage = percentages[letter];
                                   const isDominant = letter === dominantLetter;
@@ -1721,7 +1721,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                   const characteristic = dimension.characteristics[letterIdx];
                                   
                                   return (
-                                    <div key={letter} className={`relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 ${
+                                    <div key={letter} className={`relative bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg transition-all duration-300 ${
                                       isDominant ? 'ring-2 ring-opacity-50 transform scale-105' : 'opacity-90'
                                     }`} style={{
                                       '--ring-color': isDominant ? dimension.color : undefined
@@ -1737,39 +1737,39 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                       )}
                                       
                                       {/* Trait Header */}
-                                      <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center space-x-3">
-                                          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg" 
+                                      <div className="flex items-center justify-between mb-3 md:mb-4">
+                                        <div className="flex items-center space-x-2 md:space-x-3">
+                                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center text-white font-bold text-base md:text-lg" 
                                                style={{ backgroundColor: dimension.color }}>
                                             {letter}
                                           </div>
                                           <div>
-                                            <h6 className={`${localGeorama.className} font-bold text-xl text-[#002A3C]`}>
+                                            <h6 className={`${localGeorama.className} font-bold text-lg md:text-xl text-[#002A3C]`}>
                                               {label}
                                             </h6>
-                                            <p className={`${localGeorgia.className} text-sm text-gray-600`}>
+                                            <p className={`${localGeorgia.className} text-xs md:text-sm text-gray-600`}>
                                               {description}
                                             </p>
                                           </div>
                                         </div>
                                         <div className="text-right">
-                                          <div className={`text-4xl font-bold ${isDominant ? 'text-[#002A3C]' : 'text-gray-500'}`}>
+                                          <div className={`text-2xl md:text-4xl font-bold ${isDominant ? 'text-[#002A3C]' : 'text-gray-500'}`}>
                                             {percentage}%
                                           </div>
                                         </div>
                                       </div>
                                       
                                       {/* Detailed Progress Visualization */}
-                                      <div className="mb-4">
-                                        <div className="flex justify-between text-sm text-gray-600 mb-2">
+                                      <div className="mb-3 md:mb-4">
+                                        <div className="flex justify-between text-xs md:text-sm text-gray-600 mb-2">
                                           <span>0%</span>
                                           <span className="font-medium">Score Distribution</span>
                                           <span>100%</span>
                                         </div>
                                         <div className="relative">
-                                          <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+                                          <div className="w-full bg-gray-200 rounded-full h-4 md:h-6 overflow-hidden">
                                             <div 
-                                              className="h-6 rounded-full transition-all duration-2000 ease-out relative"
+                                              className="h-4 md:h-6 rounded-full transition-all duration-2000 ease-out relative"
                                               style={{
                                                 width: `${percentage}%`,
                                                 backgroundColor: dimension.color,
@@ -1777,7 +1777,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                               }}
                                             >
                                               <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-white font-bold text-sm drop-shadow-lg">
+                                                <span className="text-white font-bold text-xs md:text-sm drop-shadow-lg">
                                                   {percentage}%
                                                 </span>
                                               </div>
@@ -1787,10 +1787,10 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                       </div>
                                       
                                       {/* Characteristic Description */}
-                                      <div className="bg-gray-50 rounded-xl p-4">
+                                      <div className="bg-gray-50 rounded-lg md:rounded-xl p-3 md:p-4">
                                         <div className="flex items-start space-x-2">
-                                          <div className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: dimension.color }}></div>
-                                          <p className={`${localGeorgia.className} text-sm text-gray-700`}>
+                                          <div className="w-2 h-2 rounded-full mt-1.5 md:mt-2" style={{ backgroundColor: dimension.color }}></div>
+                                          <p className={`${localGeorgia.className} text-xs md:text-sm text-gray-700`}>
                                             {characteristic}
                                           </p>
                                         </div>
@@ -1801,19 +1801,19 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                               </div>
                               
                               {/* Dimension Analysis Summary */}
-                              <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg">
+                              <div className="mt-6 md:mt-8 bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <h6 className={`${localGeorama.className} font-bold text-lg text-[#002A3C] mb-2`}>
+                                    <h6 className={`${localGeorama.className} font-bold text-base md:text-lg text-[#002A3C] mb-1 md:mb-2`}>
                                       Dimension Analysis
                                     </h6>
-                                    <p className={`${localGeorgia.className} text-gray-600 text-sm`}>
+                                    <p className={`${localGeorgia.className} text-gray-600 text-xs md:text-sm`}>
                                       You show a {dominantPercentage - nonDominantPercentage}% preference for <span className="font-bold" style={{ color: dimension.color }}>{dominantLetter}</span> over <span className="font-bold text-gray-500">{nonDominantLetter}</span>
                                     </p>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-2xl font-bold text-[#002A3C]">{dominantLetter}</div>
-                                    <div className="text-sm text-gray-500">Final Choice</div>
+                                    <div className="text-xl md:text-2xl font-bold text-[#002A3C]">{dominantLetter}</div>
+                                    <div className="text-xs md:text-sm text-gray-500">Final Choice</div>
                                   </div>
                                 </div>
                               </div>
