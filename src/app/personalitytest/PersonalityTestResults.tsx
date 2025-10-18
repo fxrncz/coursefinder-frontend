@@ -1962,7 +1962,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                             borderRadius: '6px 6px 0 0',
                                             boxShadow: isTopInterest ? `0 8px 24px ${interest.color}40` : `0 4px 16px ${interest.color}20`,
                                             minHeight: '4px' // Ensure even 0% values are visible
-                                          }}
+                                          } as React.CSSProperties}
                                         >
                                           {/* Percentage Label Inside Bar */}
                                           <div 
