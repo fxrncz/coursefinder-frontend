@@ -20,7 +20,7 @@ function ResultsContent() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'details' | 'mbti-details' | 'development-plan'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'details' | 'mbti-details' | 'development-plan' | 'comparison'>('overview');
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const router = useRouter();
@@ -131,7 +131,8 @@ function ResultsContent() {
               { key: 'courses', label: 'Course Recommendations', shortLabel: 'Courses' },
               { key: 'details', label: 'Detailed Scores', shortLabel: 'Scores' },
               { key: 'mbti-details', label: 'Personality Details', shortLabel: 'Personality' },
-              { key: 'development-plan', label: 'Development Plan', shortLabel: 'Plan' }
+              { key: 'development-plan', label: 'Development Plan', shortLabel: 'Plan' },
+              { key: 'comparison', label: 'AI Comparison', shortLabel: 'AI Compare' }
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -160,13 +161,14 @@ function ResultsContent() {
         {/* Mobile Navigation - Grid Layout */}
         <div className="md:hidden">
           {/* Mobile Tab Navigation */}
-          <div className="grid grid-cols-2 gap-1 sm:gap-2 p-2 sm:p-3">
+          <div className="grid grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-3">
             {[
               { key: 'overview', label: 'Overview', shortLabel: 'Overview' },
               { key: 'courses', label: 'Course Recommendations', shortLabel: 'Courses' },
               { key: 'details', label: 'Detailed Scores', shortLabel: 'Scores' },
               { key: 'mbti-details', label: 'Personality Details', shortLabel: 'Personality' },
-              { key: 'development-plan', label: 'Development Plan', shortLabel: 'Plan' }
+              { key: 'development-plan', label: 'Development Plan', shortLabel: 'Plan' },
+              { key: 'comparison', label: 'AI Comparison', shortLabel: 'AI Compare' }
             ].map((tab) => (
               <button
                 key={tab.key}

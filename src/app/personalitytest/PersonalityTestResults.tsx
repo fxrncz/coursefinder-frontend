@@ -14,8 +14,8 @@ interface PersonalityTestResultsProps {
   userId?: number;
   sessionId?: string | null;
   isGuest?: boolean;
-  activeTab: 'overview' | 'courses' | 'details' | 'mbti-details' | 'development-plan';
-  setActiveTab: (tab: 'overview' | 'courses' | 'details' | 'mbti-details' | 'development-plan') => void;
+  activeTab: 'overview' | 'courses' | 'details' | 'mbti-details' | 'development-plan' | 'comparison';
+  setActiveTab: (tab: 'overview' | 'courses' | 'details' | 'mbti-details' | 'development-plan' | 'comparison') => void;
 }
 
 interface PersonalityResult {
@@ -41,6 +41,10 @@ interface PersonalityResult {
   detailedExplanation?: string;
   careerDevelopmentPlan?: CareerDevelopmentPlanData;
   courseDevelopmentPlan?: CourseDevelopmentPlanData;
+  aiValidationStatus?: AiValidationStatus;
+  aiCourseRankings?: AiCourseRanking[];
+  aiCareerRankings?: AiCareerRanking[];
+  aiModelComparison?: AiModelComparison;
 }
 
 interface CareerDevelopmentPlanData {
@@ -143,6 +147,368 @@ interface CourseRecommendation {
   matchScore: number;
   category: string;
 }
+
+interface AiValidationStatus {
+  validated: boolean;
+  validationStatus: string;
+  validationScore: number;
+  validationMessage: string;
+  validatedAt: string;
+  validationIssues: string[];
+}
+
+interface AiCourseRanking {
+  rank: number;
+  courseName: string;
+  matchScore: number;
+  matchReason: string;
+  aiRecommended: boolean;
+}
+
+interface AiCareerRanking {
+  rank: number;
+  careerName: string;
+  matchScore: number;
+  matchReason: string;
+  aiRecommended: boolean;
+}
+
+interface AiModelComparison {
+  mbtiType: string;
+  riasecCode: string;
+  model1Name: string;
+  model2Name: string;
+  courseComparisons?: CourseComparison[];
+  careerComparisons?: CareerComparison[];
+}
+
+interface CourseComparison {
+  courseName: string;
+  model1Score: number;
+  model2Score: number;
+  model1Analysis: string;
+  model2Analysis: string;
+  agreement: string;
+}
+
+interface CareerComparison {
+  careerName: string;
+  model1Score: number;
+  model2Score: number;
+  model1Analysis: string;
+  model2Analysis: string;
+  agreement: string;
+}
+
+// AI Model Comparison Component
+const AiModelComparisonSection: React.FC<{ comparison: AiModelComparison }> = ({ comparison }) => {
+  if (!comparison) return null;
+
+  const getAgreementColor = (agreement: string) => {
+    switch (agreement) {
+      case 'HIGH_AGREEMENT': return 'bg-green-100 text-green-800 border-green-200';
+      case 'MODERATE_AGREEMENT': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'LOW_AGREEMENT': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getAgreementIcon = (agreement: string) => {
+    switch (agreement) {
+      case 'HIGH_AGREEMENT': return '🤝';
+      case 'MODERATE_AGREEMENT': return '🤔';
+      case 'LOW_AGREEMENT': return '⚡';
+      default: return '❓';
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-green-600';
+    if (score >= 80) return 'text-blue-600';
+    if (score >= 70) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 rounded-3xl mb-12">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative px-6 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-white/20 backdrop-blur-sm rounded-full mb-6 shadow-2xl">
+              <span className="text-white text-2xl sm:text-3xl">🤖⚔️</span>
+            </div>
+            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+              AI Model Comparison
+            </h3>
+            <p className="text-lg sm:text-xl text-white/90 max-w-4xl mx-auto leading-relaxed">
+              Two AI models debate and compare their analysis for your <span className="font-bold text-white">{comparison.mbtiType}</span> personality and <span className="font-bold text-white">{comparison.riasecCode}</span> interests
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Model Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mr-4">
+              <span className="text-white text-xl">🧠</span>
+            </div>
+            <div>
+              <h4 className="text-xl font-bold text-gray-800">{comparison.model1Name}</h4>
+              <p className="text-sm text-gray-600">Analytical & Data-Driven</p>
+            </div>
+          </div>
+          <p className="text-gray-700">
+            Focuses on statistical patterns, market data, and analytical reasoning for career recommendations.
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200">
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4">
+              <span className="text-white text-xl">🎨</span>
+            </div>
+            <div>
+              <h4 className="text-xl font-bold text-gray-800">{comparison.model2Name}</h4>
+              <p className="text-sm text-gray-600">Creative & Innovative</p>
+            </div>
+          </div>
+          <p className="text-gray-700">
+            Explores unconventional paths, creative opportunities, and future potential in career choices.
+          </p>
+        </div>
+      </div>
+
+      {/* Course Comparisons */}
+      {comparison.courseComparisons && comparison.courseComparisons.length > 0 && (
+        <div className="mb-12">
+          <h4 className="text-2xl font-bold text-gray-800 mb-6">Course Analysis Comparison</h4>
+          <div className="space-y-6">
+            {comparison.courseComparisons.map((course, index) => (
+              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h5 className="text-xl font-semibold text-gray-800">{course.courseName}</h5>
+                  <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getAgreementColor(course.agreement)}`}>
+                    {getAgreementIcon(course.agreement)} {course.agreement.replace('_', ' ')}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Model 1 Analysis */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-semibold text-blue-800">🧠 {comparison.model1Name}</span>
+                      <span className={`text-lg font-bold ${getScoreColor(course.model1Score)}`}>
+                        {Math.round(course.model1Score)}%
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{course.model1Analysis}</p>
+                  </div>
+
+                  {/* Model 2 Analysis */}
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-semibold text-purple-800">🎨 {comparison.model2Name}</span>
+                      <span className={`text-lg font-bold ${getScoreColor(course.model2Score)}`}>
+                        {Math.round(course.model2Score)}%
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{course.model2Analysis}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Career Comparisons */}
+      {comparison.careerComparisons && comparison.careerComparisons.length > 0 && (
+        <div className="mb-12">
+          <h4 className="text-2xl font-bold text-gray-800 mb-6">Career Analysis Comparison</h4>
+          <div className="space-y-6">
+            {comparison.careerComparisons.map((career, index) => (
+              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h5 className="text-xl font-semibold text-gray-800">{career.careerName}</h5>
+                  <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getAgreementColor(career.agreement)}`}>
+                    {getAgreementIcon(career.agreement)} {career.agreement.replace('_', ' ')}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Model 1 Analysis */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-semibold text-blue-800">🧠 {comparison.model1Name}</span>
+                      <span className={`text-lg font-bold ${getScoreColor(career.model1Score)}`}>
+                        {Math.round(career.model1Score)}%
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{career.model1Analysis}</p>
+                  </div>
+
+                  {/* Model 2 Analysis */}
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-semibold text-purple-800">🎨 {comparison.model2Name}</span>
+                      <span className={`text-lg font-bold ${getScoreColor(career.model2Score)}`}>
+                        {Math.round(career.model2Score)}%
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{career.model2Analysis}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// AI Ranking Indicator Component
+const AiRankingIndicator: React.FC<{ ranking: AiCourseRanking | AiCareerRanking }> = ({ ranking }) => {
+  if (!ranking) return null;
+
+  const getRankBadge = () => {
+    if (ranking.aiRecommended || ranking.rank === 1) {
+      return (
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-bold shadow-lg">
+          <span>🤖</span>
+          <span>AI TOP CHOICE</span>
+          <span className="bg-white text-purple-600 px-2 py-0.5 rounded-full">#{ranking.rank}</span>
+        </div>
+      );
+    } else if (ranking.rank <= 3) {
+      return (
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full text-xs font-semibold shadow-md">
+          <span>🤖</span>
+          <span>AI RECOMMENDED</span>
+          <span className="bg-white text-blue-600 px-2 py-0.5 rounded-full">#{ranking.rank}</span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+          <span>🤖 AI Ranked</span>
+          <span className="bg-gray-200 px-2 py-0.5 rounded-full">#{ranking.rank}</span>
+        </div>
+      );
+    }
+  };
+
+  const getScoreColor = () => {
+    if (ranking.matchScore >= 90) return 'text-green-600';
+    if (ranking.matchScore >= 80) return 'text-blue-600';
+    if (ranking.matchScore >= 70) return 'text-yellow-600';
+    return 'text-gray-600';
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-200 space-y-2">
+      {getRankBadge()}
+      
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-xs text-gray-600 font-medium">AI Match Score:</span>
+        <span className={`text-lg font-bold ${getScoreColor()}`}>
+          {Math.round(ranking.matchScore)}%
+        </span>
+      </div>
+      
+      <p className="text-xs text-gray-700 italic">
+        💡 {ranking.matchReason}
+      </p>
+    </div>
+  );
+};
+
+// AI Validation Badge Component
+const AiValidationBadge: React.FC<{ validationStatus: AiValidationStatus }> = ({ validationStatus }) => {
+  if (!validationStatus) return null;
+
+  const getBadgeColor = () => {
+    switch (validationStatus.validationStatus) {
+      case 'VALIDATED':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'ISSUES_FOUND':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'VALIDATION_FAILED':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getBadgeIcon = () => {
+    switch (validationStatus.validationStatus) {
+      case 'VALIDATED':
+        return '✅';
+      case 'ISSUES_FOUND':
+        return '⚠️';
+      case 'VALIDATION_FAILED':
+        return '❌';
+      default:
+        return '🤖';
+    }
+  };
+
+  const getScoreColor = () => {
+    const score = validationStatus.validationScore;
+    if (score >= 0.8) return 'text-green-600';
+    if (score >= 0.6) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-200 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{getBadgeIcon()}</span>
+          <div>
+            <h3 className="font-bold text-lg text-gray-800">AI Content Validation</h3>
+            <p className="text-sm text-gray-600">
+              Validated {new Date(validationStatus.validatedAt).toLocaleString()}
+            </p>
+          </div>
+        </div>
+        <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getBadgeColor()}`}>
+          {validationStatus.validationStatus.replace('_', ' ')}
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <p className="text-sm text-gray-700">{validationStatus.validationMessage}</p>
+        </div>
+        <div className="text-right">
+          <p className={`text-lg font-bold ${getScoreColor()}`}>
+            {Math.round(validationStatus.validationScore * 100)}%
+          </p>
+          <p className="text-xs text-gray-500">Confidence Score</p>
+        </div>
+      </div>
+
+      {validationStatus.validationIssues && validationStatus.validationIssues.length > 0 && (
+        <div className="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <h4 className="font-semibold text-yellow-800 mb-2">Validation Issues:</h4>
+          <ul className="text-sm text-yellow-700 space-y-1">
+            {validationStatus.validationIssues.map((issue, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">•</span>
+                <span>{issue}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Helper function to get MBTI color theme
 const getMBTIColorTheme = (type: string) => {
@@ -682,6 +1048,12 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
           mbtiType={results?.mbtiType}
           riasecCode={results?.riasecCode}
         />
+      );
+    }
+    
+    if (activeTab === 'comparison') {
+      return (
+        <AiModelComparisonSection comparison={results?.aiModelComparison} />
       );
     }
     
