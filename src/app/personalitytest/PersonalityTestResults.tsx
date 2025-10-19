@@ -1532,7 +1532,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                   </div>
                 </div>
 
-                <div className="space-y-12 sm:space-y-16">
+                <div className="space-y-8 sm:space-y-12 md:space-y-16">
 
                 {/* Modern Test Information Section */}
                 <div className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl border border-white/20 backdrop-blur-sm">
@@ -1611,7 +1611,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                       </div>
                       
                       {/* Detailed Analysis Grid */}
-                      <div className="space-y-12">
+                      <div className="space-y-8 md:space-y-12">
                         {[
                           { 
                             pair: ['E', 'I'], 
@@ -1688,31 +1688,31 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                           const nonDominantPercentage = percentages[nonDominantLetter];
 
                           return (
-                            <div key={index} className={`bg-gradient-to-br ${dimension.bgGradient} rounded-3xl p-8 shadow-xl border ${dimension.borderColor} hover:shadow-2xl transition-all duration-500`}>
+                            <div key={index} className={`bg-gradient-to-br ${dimension.bgGradient} rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-xl border ${dimension.borderColor} hover:shadow-2xl transition-all duration-500`}>
                               {/* Dimension Header */}
-                              <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center space-x-4">
-                                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: dimension.color + '20' }}>
-                                    <span className="text-3xl">{dimension.icon}</span>
+                              <div className="flex items-center justify-between mb-6 md:mb-8">
+                                <div className="flex items-center space-x-3 md:space-x-4">
+                                  <div className="w-12 h-12 md:w-16 md:h-16 bg-white rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: dimension.color + '20' }}>
+                                    <span className="text-2xl md:text-3xl">{dimension.icon}</span>
                                   </div>
                                   <div>
-                                    <h6 className={`${localGeorama.className} font-bold text-2xl text-[#002A3C] mb-1`}>
+                                    <h6 className={`${localGeorama.className} font-bold text-xl md:text-2xl text-[#002A3C] mb-1`}>
                                       {dimension.desc}
                                     </h6>
-                                    <p className={`${localGeorgia.className} text-[#666] text-lg`}>
+                                    <p className={`${localGeorgia.className} text-[#666] text-sm md:text-lg`}>
                                       How you process information and make decisions
                                     </p>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm text-gray-600 mb-1">Dominant Trait</div>
-                                  <div className="text-3xl font-bold text-[#002A3C]">{dominantLetter}</div>
-                                  <div className="text-lg font-semibold" style={{ color: dimension.color }}>{dominantPercentage}%</div>
+                                  <div className="text-xs md:text-sm text-gray-600 mb-1">Dominant Trait</div>
+                                  <div className="text-2xl md:text-3xl font-bold text-[#002A3C]">{dominantLetter}</div>
+                                  <div className="text-base md:text-lg font-semibold" style={{ color: dimension.color }}>{dominantPercentage}%</div>
                                 </div>
                               </div>
                               
                               {/* Detailed Comparison Cards */}
-                              <div className="grid md:grid-cols-2 gap-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 {dimension.pair.map((letter, letterIdx) => {
                                   const percentage = percentages[letter];
                                   const isDominant = letter === dominantLetter;
@@ -1721,7 +1721,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                   const characteristic = dimension.characteristics[letterIdx];
                                   
                                   return (
-                                    <div key={letter} className={`relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 ${
+                                    <div key={letter} className={`relative bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg transition-all duration-300 ${
                                       isDominant ? 'ring-2 ring-opacity-50 transform scale-105' : 'opacity-90'
                                     }`} style={{
                                       '--ring-color': isDominant ? dimension.color : undefined
@@ -1737,39 +1737,39 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                       )}
                                       
                                       {/* Trait Header */}
-                                      <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center space-x-3">
-                                          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg" 
+                                      <div className="flex items-center justify-between mb-3 md:mb-4">
+                                        <div className="flex items-center space-x-2 md:space-x-3">
+                                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center text-white font-bold text-base md:text-lg" 
                                                style={{ backgroundColor: dimension.color }}>
                                             {letter}
                                           </div>
                                           <div>
-                                            <h6 className={`${localGeorama.className} font-bold text-xl text-[#002A3C]`}>
+                                            <h6 className={`${localGeorama.className} font-bold text-lg md:text-xl text-[#002A3C]`}>
                                               {label}
                                             </h6>
-                                            <p className={`${localGeorgia.className} text-sm text-gray-600`}>
+                                            <p className={`${localGeorgia.className} text-xs md:text-sm text-gray-600`}>
                                               {description}
                                             </p>
                                           </div>
                                         </div>
                                         <div className="text-right">
-                                          <div className={`text-4xl font-bold ${isDominant ? 'text-[#002A3C]' : 'text-gray-500'}`}>
+                                          <div className={`text-2xl md:text-4xl font-bold ${isDominant ? 'text-[#002A3C]' : 'text-gray-500'}`}>
                                             {percentage}%
                                           </div>
                                         </div>
                                       </div>
                                       
                                       {/* Detailed Progress Visualization */}
-                                      <div className="mb-4">
-                                        <div className="flex justify-between text-sm text-gray-600 mb-2">
+                                      <div className="mb-3 md:mb-4">
+                                        <div className="flex justify-between text-xs md:text-sm text-gray-600 mb-2">
                                           <span>0%</span>
                                           <span className="font-medium">Score Distribution</span>
                                           <span>100%</span>
                                         </div>
                                         <div className="relative">
-                                          <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+                                          <div className="w-full bg-gray-200 rounded-full h-4 md:h-6 overflow-hidden">
                                             <div 
-                                              className="h-6 rounded-full transition-all duration-2000 ease-out relative"
+                                              className="h-4 md:h-6 rounded-full transition-all duration-2000 ease-out relative"
                                               style={{
                                                 width: `${percentage}%`,
                                                 backgroundColor: dimension.color,
@@ -1777,7 +1777,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                               }}
                                             >
                                               <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-white font-bold text-sm drop-shadow-lg">
+                                                <span className="text-white font-bold text-xs md:text-sm drop-shadow-lg">
                                                   {percentage}%
                                                 </span>
                                               </div>
@@ -1787,10 +1787,10 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                       </div>
                                       
                                       {/* Characteristic Description */}
-                                      <div className="bg-gray-50 rounded-xl p-4">
+                                      <div className="bg-gray-50 rounded-lg md:rounded-xl p-3 md:p-4">
                                         <div className="flex items-start space-x-2">
-                                          <div className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: dimension.color }}></div>
-                                          <p className={`${localGeorgia.className} text-sm text-gray-700`}>
+                                          <div className="w-2 h-2 rounded-full mt-1.5 md:mt-2" style={{ backgroundColor: dimension.color }}></div>
+                                          <p className={`${localGeorgia.className} text-xs md:text-sm text-gray-700`}>
                                             {characteristic}
                                           </p>
                                         </div>
@@ -1801,19 +1801,19 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                               </div>
                               
                               {/* Dimension Analysis Summary */}
-                              <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg">
+                              <div className="mt-6 md:mt-8 bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <h6 className={`${localGeorama.className} font-bold text-lg text-[#002A3C] mb-2`}>
+                                    <h6 className={`${localGeorama.className} font-bold text-base md:text-lg text-[#002A3C] mb-1 md:mb-2`}>
                                       Dimension Analysis
                                     </h6>
-                                    <p className={`${localGeorgia.className} text-gray-600 text-sm`}>
+                                    <p className={`${localGeorgia.className} text-gray-600 text-xs md:text-sm`}>
                                       You show a {dominantPercentage - nonDominantPercentage}% preference for <span className="font-bold" style={{ color: dimension.color }}>{dominantLetter}</span> over <span className="font-bold text-gray-500">{nonDominantLetter}</span>
                                     </p>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-2xl font-bold text-[#002A3C]">{dominantLetter}</div>
-                                    <div className="text-sm text-gray-500">Final Choice</div>
+                                    <div className="text-xl md:text-2xl font-bold text-[#002A3C]">{dominantLetter}</div>
+                                    <div className="text-xs md:text-sm text-gray-500">Final Choice</div>
                                   </div>
                                 </div>
                               </div>
@@ -1850,12 +1850,30 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                         </div>
                       </div>
                       
-                      <div className="bg-white rounded-2xl p-4 md:p-6 lg:p-8 shadow-xl border border-gray-100 mx-1 md:mx-0">
+                      <div className="bg-white rounded-2xl p-3 md:p-6 lg:p-8 shadow-xl border border-gray-100 mx-0 md:mx-1">
                         {/* Modern Vertical Bar Chart Visualization */}
-                        <div className="space-y-4 md:space-y-6 lg:space-y-8">
+                        <div className="space-y-3 md:space-y-6 lg:space-y-8">
                           {/* Chart Container */}
-                          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-3 md:p-4 lg:p-6 border border-gray-100">
-                            <div className="flex items-end justify-center space-x-2 md:space-x-4 lg:space-x-6 relative" style={{ height: '400px' }}>
+                          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-2 md:p-4 lg:p-6 border border-gray-100 overflow-hidden">
+                            <style jsx>{`
+                              .chart-container {
+                                height: 300px;
+                              }
+                              @media (min-width: 768px) {
+                                .chart-container {
+                                  height: 400px;
+                                }
+                              }
+                              .chart-bar {
+                                height: calc(var(--percentage) * 300px / 100);
+                              }
+                              @media (min-width: 768px) {
+                                .chart-bar {
+                                  height: calc(var(--percentage) * 400px / 100);
+                                }
+                              }
+                            `}</style>
+                            <div className="flex items-end justify-center space-x-1 md:space-x-4 lg:space-x-6 relative chart-container">
                               {/* Y-axis Grid Lines - Fixed positioning for perfect alignment */}
                               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none" style={{ paddingBottom: '0px' }}>
                                 {[100, 75, 50, 25, 0].map((value, index) => (
@@ -1864,9 +1882,9 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                     height: '1px'
                                   }}>
                                     <div className="w-full border-t border-dashed border-gray-400 opacity-70"></div>
-                                    <div className="absolute right-0 text-xs text-gray-600 font-semibold bg-white px-2 py-1 rounded shadow-sm border border-gray-200" style={{
+                                    <div className="absolute right-0 text-xs text-gray-600 font-semibold bg-white px-1 md:px-2 py-0.5 md:py-1 rounded shadow-sm border border-gray-200" style={{
                                       transform: 'translateX(100%)',
-                                      marginLeft: '8px'
+                                      marginLeft: '4px'
                                     }}>
                                       {value}%
                                     </div>
@@ -1931,32 +1949,31 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                     <div key={code} className="flex flex-col items-center group relative">
                                       {/* Bar Container */}
                                       <div className="relative flex flex-col items-center mb-4">
-                                        {/* Percentage Label on Top - White badge with colored border */}
-                                        <div 
-                                          className="mb-1 md:mb-2 px-2 md:px-3 py-0.5 md:py-1 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-white shadow-sm"
-                                          style={{
-                                            border: `2px solid ${interest.color}`,
-                                            color: interest.color
-                                          }}
-                                        >
-                                          {percentage}%
-                                        </div>
-                                        
                                         {/* Vertical Bar - Fixed height calculation for perfect grid alignment */}
                                         <div 
-                                          className={`relative transition-all duration-2000 ease-out group-hover:scale-105 w-12 md:w-14 lg:w-18 ${
+                                          className={`relative transition-all duration-2000 ease-out group-hover:scale-105 w-8 md:w-14 lg:w-18 chart-bar ${
                                             isTopInterest ? 'drop-shadow-lg' : ''
                                           }`}
                                           style={{
-                                            height: `${(percentage / 100) * 400}px`, // Matches container height of 400px
+                                            '--percentage': percentage,
                                             background: isTopInterest 
                                               ? `linear-gradient(180deg, ${interest.color}, ${interest.color}CC)` 
                                               : `linear-gradient(180deg, ${interest.color}80, ${interest.color}60)`,
-                                            borderRadius: '8px 8px 0 0',
+                                            borderRadius: '6px 6px 0 0',
                                             boxShadow: isTopInterest ? `0 8px 24px ${interest.color}40` : `0 4px 16px ${interest.color}20`,
                                             minHeight: '4px' // Ensure even 0% values are visible
-                                          }}
+                                          } as React.CSSProperties}
                                         >
+                                          {/* Percentage Label Inside Bar */}
+                                          <div 
+                                            className="absolute top-1 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs md:text-sm drop-shadow-lg"
+                                            style={{
+                                              textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
+                                            }}
+                                          >
+                                            {percentage}%
+                                          </div>
+                                          
                                           {/* Shimmer effect for top interests */}
                                           {isTopInterest && (
                                             <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white to-transparent opacity-30 animate-pulse rounded-t-lg"></div>
@@ -1965,7 +1982,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                         
                                         {/* Rank Badge for top interests - improved positioning */}
                                         {isTopInterest && rank <= 2 && (
-                                          <div className="absolute -top-2 md:-top-3 -left-2 md:-left-3 w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                          <div className="absolute -top-2 md:-top-3 -right-2 md:-right-3 w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
                                             <span className="text-white font-bold text-xs md:text-sm">
                                               {rank}
                                             </span>
@@ -1994,15 +2011,15 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                             </div>
                             
                             {/* Chart Title Below */}
-                            <div className="text-center mt-3 md:mt-4 lg:mt-6">
-                              <h6 className={`${localGeorama.className} text-sm md:text-base lg:text-lg font-bold text-[#002A3C]`}>
+                            <div className="text-center mt-2 md:mt-4 lg:mt-6">
+                              <h6 className={`${localGeorama.className} text-xs md:text-base lg:text-lg font-bold text-[#002A3C]`}>
                                 RIASEC Career Interest Assessment
                               </h6>
                             </div>
                           </div>
                           
                           {/* Legend with Detailed Info - Fixed for desktop layout */}
-                          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
+                          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 md:gap-4 lg:gap-6">
                             {(() => {
                               const interests = {
                                 'R': { name: 'Realistic', desc: 'Hands-on, practical work', icon: '🔧', color: '#ef4444' },
@@ -2051,17 +2068,17 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                 const isTopInterest = correctTopInterests.includes(code);
                                 
                                 return (
-                                  <div key={code} className={`p-3 md:p-4 lg:p-5 xl:p-4 rounded-lg md:rounded-xl border-2 transition-all duration-300 min-h-[120px] md:min-h-[130px] lg:min-h-[140px] xl:min-h-[120px] ${
+                                  <div key={code} className={`p-2 md:p-4 lg:p-5 xl:p-4 rounded-lg md:rounded-xl border-2 transition-all duration-300 min-h-[100px] md:min-h-[130px] lg:min-h-[140px] xl:min-h-[120px] ${
                                     isTopInterest 
                                       ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300 shadow-lg transform scale-105' 
                                       : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md'
                                   }`}>
                                     <div className="flex flex-col items-center text-center h-full justify-between">
                                       {/* Icon and Name Section */}
-                                      <div className="flex flex-col items-center space-y-2">
-                                        <span className="text-2xl md:text-3xl lg:text-4xl xl:text-2xl">{interest.icon}</span>
+                                      <div className="flex flex-col items-center space-y-1 md:space-y-2">
+                                        <span className="text-xl md:text-3xl lg:text-4xl xl:text-2xl">{interest.icon}</span>
                                         <div className="space-y-1">
-                                          <div className={`text-sm md:text-base lg:text-lg xl:text-sm font-bold leading-tight ${isTopInterest ? 'text-[#002A3C]' : 'text-gray-700'}`}>
+                                          <div className={`text-xs md:text-base lg:text-lg xl:text-sm font-bold leading-tight ${isTopInterest ? 'text-[#002A3C]' : 'text-gray-700'}`}>
                                             {interest.name}
                                           </div>
                                           <div className={`text-xs md:text-sm lg:text-base xl:text-xs leading-tight ${isTopInterest ? 'text-blue-600' : 'text-gray-500'}`}>
@@ -2072,7 +2089,7 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                                       
                                       {/* Percentage Section */}
                                       <div className="mt-auto">
-                                        <div className={`text-lg md:text-xl lg:text-2xl xl:text-lg font-bold ${isTopInterest ? 'text-blue-600' : 'text-gray-600'}`}>
+                                        <div className={`text-base md:text-xl lg:text-2xl xl:text-lg font-bold ${isTopInterest ? 'text-blue-600' : 'text-gray-600'}`}>
                                           {percentage}%
                                         </div>
                                         {isTopInterest && (

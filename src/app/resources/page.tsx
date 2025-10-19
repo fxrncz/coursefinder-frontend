@@ -157,11 +157,29 @@ export default function ResourcesPage() {
                     </DialogHeader>
                     <div className="mt-2 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
                       <div>
-                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Academic Sources</h4>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Primary Theoretical Source</h4>
                         <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
                           <li>
-                            Holland, J. L. (1997). Making Vocational Choices: A Theory of Vocational Personalities and Work Environments (3rd ed.). Psychological Assessment Resources. <span className="block italic text-[#4d2c00]">Foundational book introducing RIASEC model linking personality to occupational environments.</span>
+                            Holland, J. L. (1997). Making Vocational Choices: A Theory of Vocational Personalities and Work Environments (3rd ed.). Odessa, FL: Psychological Assessment Resources. <span className="block italic text-[#4d2c00]">Foundational book introducing RIASEC model linking personality to occupational environments.</span>
                           </li>
+                        </ul>
+                      </div>
+                      <div className="border-t border-[#E7DFD6]" />
+                      <div>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Validation & Meta-Analysis</h4>
+                        <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
+                          <li>
+                            Spokane, A. R., Luchetta, E. J., & Richwine, M. H. (2002). Holland's theory of vocational personalities in work environments. In D. Brown & Associates (Eds.), Career choice and development (4th ed., pp. 373-426). San Francisco: Jossey-Bass. <span className="block italic text-[#4d2c00]">Comprehensive review of Holland's theory with extensive validation evidence.</span>
+                          </li>
+                          <li>
+                            Spokane, A. R., Luchetta, E. J., & Richwine, M. H. (2002). Holland's theory: Research review and some meta-analyses. Journal of Vocational Behavior, 61(3), 358-384. <span className="block italic text-[#4d2c00]">Meta-analytic validation of Holland's theory across multiple studies.</span>
+                          </li>
+                        </ul>
+                      </div>
+                      <div className="border-t border-[#E7DFD6]" />
+                      <div>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Additional Research</h4>
+                        <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
                           <li>
                             Rounds, J., & Su, R. (2014). The nature and power of interests. Current Directions in Psychological Science, 23(2), 98–103. <span className="block italic text-[#4d2c00]">Validates the RIASEC model as one of the most predictive frameworks for career matching.</span>
                           </li>
@@ -172,10 +190,19 @@ export default function ResourcesPage() {
                       </div>
                       <div className="border-t border-[#E7DFD6]" />
                       <div>
-                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Publicly Accessible Resources</h4>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Official Resources</h4>
                         <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
                           <li>
-                            O*NET OnLine – Browse by Interests: <a className="text-[#004E70] underline" href="https://www.onetonline.org/find/descriptor/browse/Interests/" target="_blank" rel="noopener noreferrer">onetonline.org</a> <span className="block italic text-[#4d2c00]">Government‑maintained occupational database with RIASEC codes for every job.</span>
+                            Self-Directed Search. (n.d.). RIASEC Theory. <a className="text-[#004E70] underline" href="https://self-directed-search.com/riasec-theory/" target="_blank" rel="noopener noreferrer">self-directed-search.com</a> <span className="block italic text-[#4d2c00]">Official resource explaining Holland's RIASEC theory and its applications.</span>
+                          </li>
+                        </ul>
+                      </div>
+                      <div className="border-t border-[#E7DFD6]" />
+                      <div>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Occupational Data</h4>
+                        <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
+                          <li>
+                            O*NET Resource Center. (n.d.). Occupational Information Network. U.S. Department of Labor/Employment and Training Administration. <a className="text-[#004E70] underline" href="https://www.onetonline.org/" target="_blank" rel="noopener noreferrer">onetonline.org</a> <span className="block italic text-[#4d2c00]">Government‑maintained occupational database with RIASEC codes for every job.</span>
                           </li>
                           <li>
                             National Center for O*NET Development – Interest Profiler: <a className="text-[#004E70] underline" href="https://www.mynextmove.org/explore/ip" target="_blank" rel="noopener noreferrer">mynextmove.org</a> <span className="block italic text-[#4d2c00]">Free online RIASEC‑based career assessment tool with U.S. Department of Labor data.</span>
@@ -203,7 +230,7 @@ export default function ResourcesPage() {
                     </DialogHeader>
                     <div className="mt-2 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
                       <div>
-                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Academic Sources</h4>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>MBTI-Based Learning Style Research</h4>
                         <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
                           <li>
                             Lawrence, G. (1993). People Types and Tiger Stripes: A Practical Guide to Learning Styles. Center for Applications of Psychological Type. <span className="block italic text-[#4d2c00]">Classic MBTI learning style reference.</span>
@@ -224,7 +251,19 @@ export default function ResourcesPage() {
                       </div>
                       <div className="border-t border-[#E7DFD6]" />
                       <div>
-                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Publicly Accessible Resources</h4>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Related Learning Theory Resources</h4>
+                        <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
+                          <li>
+                            Kolb, D. A. (1984). Experiential learning: Experience as the source of learning and development. Prentice-Hall. <span className="block italic text-[#4d2c00]">Framework for hands-on vs. reflective learning styles.</span>
+                          </li>
+                          <li>
+                            Gardner, H. (1983). Frames of Mind: The Theory of Multiple Intelligences. Basic Books. <span className="block italic text-[#4d2c00]">Addresses diversity in learning and cognitive preferences.</span>
+                          </li>
+                        </ul>
+                      </div>
+                      <div className="border-t border-[#E7DFD6]" />
+                      <div>
+                        <h4 className={`${localGeorgia.className} text-[#002A3C] font-semibold`}>Online Learning Resources</h4>
                         <ul className={`${localGeorgia.className} text-[#294556] mt-3 space-y-3 text-sm sm:text-base`}>
                           <li>
                             The Myers-Briggs Company – Type and Learning: <a className="text-[#004E70] underline" href="https://www.themyersbriggs.com/en-US/Using-Type/Type-and-Learning" target="_blank" rel="noopener noreferrer">themyersbriggs.com</a> <span className="block italic text-[#4d2c00]">MBTI learning style summaries.</span>
