@@ -201,7 +201,7 @@ interface CareerComparison {
 }
 
 // AI Model Comparison Component
-const AiModelComparisonSection: React.FC<{ comparison: AiModelComparison }> = ({ comparison }) => {
+const AiModelComparisonSection: React.FC<{ comparison?: AiModelComparison }> = ({ comparison }) => {
   if (!comparison) return null;
 
   const getAgreementColor = (agreement: string) => {
