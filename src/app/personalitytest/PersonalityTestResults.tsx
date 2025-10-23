@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiUrl } from '../../lib/api';
 import { localGeorama, localGeorgia } from '../fonts';
 import CareerDevelopmentPlan from '../components/CareerDevelopmentPlan';
+import AdvancedAnalytics from '../components/AdvancedAnalytics';
 
 // Extend Window interface for our retry flag
 declare global {
@@ -45,6 +46,45 @@ interface PersonalityResult {
   aiCourseRankings?: AiCourseRanking[];
   aiCareerRankings?: AiCareerRanking[];
   aiModelComparison?: AiModelComparison;
+  advancedAnalytics?: AdvancedAnalyticsData;
+}
+
+interface AdvancedAnalyticsData {
+  mbtiType: string;
+  riasecCode: string;
+  generatedAt: string;
+  personalityMetrics: {
+    mbtiTraits: Array<{ trait: string; percentage: number; label: string }>;
+    riasecInterests: Array<{ trait: string; percentage: number; label: string }>;
+    averageTraitStrength: number;
+  };
+  courseMatches: Array<{
+    courseName: string;
+    courseDescription: string;
+    humanMetricScore: number;
+    aiMetricScore: number;
+    combinedMatchScore: number;
+    matchExplanation: string;
+    confidenceLevel: string;
+  }>;
+  careerMatches: Array<{
+    careerName: string;
+    careerDescription: string;
+    humanMetricScore: number;
+    aiMetricScore: number;
+    combinedMatchScore: number;
+    matchExplanation: string;
+    confidenceLevel: string;
+  }>;
+  overallSynthesis: string;
+  overallStatistics: {
+    averageCourseMatch: number;
+    topCourseMatch: number;
+    averageCareerMatch: number;
+    topCareerMatch: number;
+    overallConfidence: number;
+    recommendationStrength: string;
+  };
 }
 
 interface CareerDevelopmentPlanData {
@@ -1950,6 +1990,13 @@ const PersonalityTestResults: React.FC<PersonalityTestResultsProps> = ({ userId,
                     </div>
                   </div>
                 </div>
+
+                {/* Advanced Analytics Section */}
+                {results.advancedAnalytics && (
+                  <div className="mb-12">
+                    <AdvancedAnalytics analytics={results.advancedAnalytics} />
+                  </div>
+                )}
 
                 {/* Modern Personality Breakdown Section */}
                 <div className="bg-gradient-to-br from-white via-emerald-50/30 to-green-50/50 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl border border-white/20 backdrop-blur-sm">
